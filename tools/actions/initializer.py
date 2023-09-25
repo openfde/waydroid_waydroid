@@ -57,26 +57,26 @@ def setup_config(args):
     if not args.system_type:
         args.system_type = channels_cfg["channels"]["system_type"]
 
-    args.system_ota = args.system_channel + "/" + args.rom_type + \
-        "/waydroid_" + args.arch + "/" + args.system_type + ".json"
-    system_request = helpers.http.retrieve(args.system_ota)
-    if system_request[0] != 200:
-        if args.images_path not in preinstalled_images_paths:
-            raise ValueError(
-                "Failed to get system OTA channel: {}, error: {}".format(args.system_ota, system_request[0]))
-        else:
-            args.system_ota = "None"
+    #args.system_ota = args.system_channel + "/" + args.rom_type + \
+    #    "/waydroid_" + args.arch + "/" + args.system_type + ".json"
+    #system_request = helpers.http.retrieve(args.system_ota)
+    #if system_request[0] != 200:
+    #    if args.images_path not in preinstalled_images_paths:
+    #        raise ValueError(
+    #            "Failed to get system OTA channel: {}, error: {}".format(args.system_ota, system_request[0]))
+    #    else:
+    args.system_ota = "None"
 
     device_codename = helpers.props.host_get(args, "ro.product.device")
     args.vendor_type = None
-    for vendor in [device_codename, get_vendor_type(args)]:
-        vendor_ota = args.vendor_channel + "/waydroid_" + \
-            args.arch + "/" + vendor.replace(" ", "_") + ".json"
-        vendor_request = helpers.http.retrieve(vendor_ota)
-        if vendor_request[0] == 200:
-            args.vendor_type = vendor
-            args.vendor_ota = vendor_ota
-            break
+    #for vendor in [device_codename, get_vendor_type(args)]:
+    #    vendor_ota = args.vendor_channel + "/waydroid_" + \
+    #        args.arch + "/" + vendor.replace(" ", "_") + ".json"
+    #    vendor_request = helpers.http.retrieve(vendor_ota)
+    #    if vendor_request[0] == 200:
+    #        args.vendor_type = vendor
+    args.vendor_ota = "None"
+    #        break
 
     if not args.vendor_type:
         if args.images_path not in preinstalled_images_paths:
