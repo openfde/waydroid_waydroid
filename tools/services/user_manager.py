@@ -69,6 +69,7 @@ def start(args, session, unlocked_cb=None):
 
         tools.helpers.net.adb_connect(args)
 
+        """
         platformService = IPlatform.get_service(args)
         if platformService:
             if not os.path.exists(apps_dir):
@@ -82,10 +83,13 @@ def start(args, session, unlocked_cb=None):
                 makeWaydroidDesktopFile(False)
             else:
                 makeWaydroidDesktopFile(True)
+        """
         if unlocked_cb:
             unlocked_cb()
 
     def packageStateChanged(mode, packageName, uid):
+        logging.debug("packageStateChanged")
+        """
         platformService = IPlatform.get_service(args)
         if platformService:
             appInfo = platformService.getAppInfo(packageName)
@@ -100,6 +104,7 @@ def start(args, session, unlocked_cb=None):
                 if os.path.isfile(desktop_file_path):
                     if makeDesktopFile(appInfo) == -1:
                         os.remove(desktop_file_path)
+        """
 
     def service_thread():
         while not stopping:
