@@ -271,8 +271,8 @@ fde_start() {
         set +e
         if [ "$FAILED" = "1" ]; then
             echo "Failed to setup waydroid-net." >&2
-            stop force
-            exit 1
+            #stop force
+            exit 0
         fi
     }
 
@@ -302,7 +302,7 @@ fde_start() {
         if [ -e $save_gateway_path ]; then
             route add default gw `cat $save_gateway_path`
         else
-            echo "linux should to config network!! " && exit 0
+            echo "linux should to config network!! "
         fi
     fi
     if [ -n '$resolv_nameserver' ]; then
