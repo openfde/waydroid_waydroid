@@ -253,8 +253,13 @@ def make_base_props(args):
             gralloc = "android"
     if not gralloc:
         if dri:
-            gralloc = "gbm"
-            egl = "mesa"
+            vulkan = tools.helpers.gpu.getVulkanDriver(args, os.path.basename(dri))
+            if vulkan == "powervr":
+                gralloc = "ft2004"
+                egl = "powervr"
+            else:
+                gralloc = "gbm"
+                egl = "mesa"
         else:
             gralloc = "default"
             egl = "swiftshader"
