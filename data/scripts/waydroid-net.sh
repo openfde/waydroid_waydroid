@@ -261,14 +261,76 @@ stop() {
     rm -f "${varrun}"/network_up
 }
 
+fde_start() {
+    [ ! -f "${varrun}/network_up" ] || { echo "waydroid-net is already running"; exit 0; }
+
+
+    FAILED=1
+
+    cleanup() {
+        set +e
+        if [ "$FAILED" = "1" ]; then
+            echo "Failed to setup waydroid-net." >&2
+            #stop force
+            exit 0
+        fi
+    }
+
+    trap cleanup EXIT HUP INT TERM
+    set -e
+
+
+    # if we are run from systemd on a system with selinux enabled,
+    # the mkdir will create /run/lxc as init_var_run_t which dnsmasq
+    # can't write its pid into, so we restorecon it (to var_run_t)
+    if [ ! -d "${varrun}" ]; then
+        mkdir -p "${varrun}"
+        if command -v restorecon >/dev/null 2>&1; then
+            restorecon "${varrun}"
+        fi
+    fi
+
+    save_nameserver_path="/run/waydroid-lxc/nameserver"
+    save_gateway_path="/run/waydroid-lxc/gateway"
+    default_nameserver="nameserver 114.114.114.114"
+    resolv_conf_path="/etc/resolv.conf"
+    using_gateway=`route -n|grep " UG "|awk '{print $2}'|awk 'NR==1'`
+    resolv_nameserver=`cat "$resolv_conf_path"|grep nameserver|awk 'NR==1'`
+    if [ -n "$using_gateway" ]; then
+	      echo $using_gateway > $save_gateway_path
+    else
+        if [ -e $save_gateway_path ]; then
+            route add default gw `cat $save_gateway_path`
+        else
+            echo "linux should to config network!! "
+        fi
+    fi
+    if [ -n '$resolv_nameserver' ]; then
+	      echo "$resolv_nameserver" > $save_nameserver_path
+    else
+        if [ -e $save_nameserver_path ]; then
+            echo $save_nameserver_path > $resolv_conf_path
+        else
+            echo $default_nameserver > $resolv_conf_path
+        fi
+    fi
+    touch "${varrun}"/network_up
+    FAILED=0
+}
+
+fde_stop() {
+    [ -f "${varrun}/network_up" ] || [ "$1" = "force" ] || { echo "waydroid-net isn't running"; exit 1; }
+    rm -f "${varrun}"/network_up
+}
+
 # See how we were called.
 case "$1" in
     start)
-        start
+        fde_start
     ;;
 
     stop)
-        stop
+        fde_stop
     ;;
 
     restart|reload|force-reload)

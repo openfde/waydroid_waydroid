@@ -45,7 +45,10 @@ def generate_nodes_lxc_config(args):
     make_entry("/dev/full")
     make_entry("/dev/ashmem")
     make_entry("/dev/fuse")
-    make_entry("/dev/ion")
+    if os.path.exists("/dev/fdeion"):
+        make_entry("/dev/fdeion","dev/ion")
+    else:
+        make_entry("/dev/ion")
     make_entry("/dev/tty")
     make_entry("/dev/char", options="bind,create=dir,optional 0 0")
 
@@ -255,8 +258,13 @@ def make_base_props(args):
             gralloc = "android"
     if not gralloc:
         if dri:
-            gralloc = "gbm"
-            egl = "mesa"
+            vulkan = tools.helpers.gpu.getVulkanDriver(args, os.path.basename(dri))
+            if vulkan == "powervr":
+                gralloc = "ft2004"
+                egl = "powervr"
+            else:
+                gralloc = "gbm"
+                egl = "mesa"
         else:
             gralloc = "default"
             egl = "swiftshader"
