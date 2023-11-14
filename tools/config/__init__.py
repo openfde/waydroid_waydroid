@@ -55,7 +55,6 @@ session_defaults = {
     "group_id": str(os.getgid()),
     "host_user": os.path.expanduser("~"),
     "pid": str(os.getpid()),
-    "fde_data_home":str("/.fde"),
     "xdg_data_home": str(os.environ.get('XDG_DATA_HOME', os.path.expanduser("~") + "/.local/share")),
     "xdg_runtime_dir": str(os.environ.get('XDG_RUNTIME_DIR')),
     "wayland_display": str(os.environ.get('WAYLAND_DISPLAY')),
@@ -65,8 +64,8 @@ session_defaults = {
     "background_start": "true"
 }
 session_defaults["config_path"] = defaults["work"] + "/session.cfg"
-session_defaults["waydroid_data"] = session_defaults["fde_data_home"] +"/" + \
-    session_defaults["user_name"]"
+session_defaults["waydroid_data"] = session_defaults["xdg_data_home"] + \
+    "/waydroid/data"
 if session_defaults["pulse_runtime_path"] == "None":
     session_defaults["pulse_runtime_path"] = session_defaults["xdg_runtime_dir"] + "/pulse"
 
