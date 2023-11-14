@@ -65,7 +65,7 @@ session_defaults = {
 }
 session_defaults["config_path"] = defaults["work"] + "/session.cfg"
 session_defaults["waydroid_data"] = session_defaults["xdg_data_home"] + \
-    "/waydroid/data"
+    "/openfde"
 if session_defaults["pulse_runtime_path"] == "None":
     session_defaults["pulse_runtime_path"] = session_defaults["xdg_runtime_dir"] + "/pulse"
 
