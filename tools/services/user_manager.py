@@ -66,10 +66,9 @@ def start(args, session, unlocked_cb=None):
 
     def userUnlocked(uid):
         logging.info("Android with user {} is ready".format(uid))
-
+        """
         tools.helpers.net.adb_connect(args)
 
-        """
         platformService = IPlatform.get_service(args)
         if platformService:
             if not os.path.exists(apps_dir):
