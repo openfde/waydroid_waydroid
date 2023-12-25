@@ -3,6 +3,7 @@
 """
  1.The service to implement network-related interfaces
  2.add forgetWifi, getStaticIpConf; modify setStaticIp, setDHCP, getAllSsid, getActivedWifi, isWifiEnable
+ 3.add getActivedInterface, getIpConfigure; modify return None to ''
 """
 import logging
 import threading
@@ -56,7 +57,7 @@ def start(args):
         logging.debug(output)
         if not output:
             logging.debug("nmcli con add:")
-            output = run_nmcli_command("nmcli con add con-name Openfde" + interfaceName + " ifname " + interfaceName + " ipv4.method 'auto'")
+            output = run_nmcli_command("nmcli con add con-name Openfde" + interfaceName + " ifname " + interfaceName + " type ethernet ipv4.method 'auto'")
         output = run_nmcli_command("nmcli connection up Openfde" + interfaceName)
         if output:
             logging.debug("set setDHCP success")
@@ -70,13 +71,13 @@ def start(args):
         logging.debug(output)
         if output == "success":
             logging.debug("none any Ssid")
-            return None
+            return ""
         elif output:
             logging.debug("getAllSsid success")
             return output
         else:
             logging.debug("getAllSsid fail")
-            return None
+            return ""
     def connectSsid(ssid, passwd):
         logging.debug("ssid: {}, passwd: {}".format(ssid, passwd))
         output = run_nmcli_command("nmcli device wifi connect '" + ssid + "' password '" + passwd + "'")
@@ -95,7 +96,7 @@ def start(args):
             return output[2:]
         else:
             logging.debug("no ActivedWifi")
-            return None
+            return ""
     def connectActivedWifi(ssid, connect):
         logging.debug("ssid: {}, connect: {}".format(ssid, connect))
         if connect == 1:
@@ -127,13 +128,13 @@ def start(args):
         logging.debug(output)
         if output == "success":
             logging.debug("connectedWifiList success none")
-            return None
+            return ""
         elif output:
             logging.debug("connectedWifiList success has")
             return output
         else:
             logging.debug("connectedWifiList fail")
-            return None
+            return ""
     def isWifiEnable():
         output = run_nmcli_command("nmcli -g TYPE,STATE device status|grep wifi|grep 'wifi:unavailable'")
         logging.debug(output)
@@ -153,13 +154,13 @@ def start(args):
         logging.debug(output)
         if output == "success":
             logging.debug("no SignalAndSecurity")
-            return None
+            return ""
         elif output:
             logging.debug("has SignalAndSecurity")
             return output
         else:
             logging.debug("getSignalAndSecurity fail")
-            return None
+            return ""
     def connectHidedWifi(ssid, passwd):
         logging.debug("ssid: {}, passwd: {}".format(ssid, passwd))
 
@@ -192,19 +193,77 @@ def start(args):
         logging.debug(output)
         if output == "success":
             logging.debug("no StaticIpConf")
-            return None
+            return ""
         elif output:
             logging.debug("has StaticIpConf")
             return output
         else:
             logging.debug("getStaticIpConf fail")
-            return None
+            return ""
+    def getActivedInterface():
+        output = run_nmcli_command("nmcli -g type,device connection show --active|grep '802-3-ethernet:'|sed -n 1p|awk -F: '{print$2}'")
+        if output == "success":
+            logging.debug("getOneActivedEthernet: null")
+            return ""
+        elif output:
+            logging.debug("getOneActivedEthernet: " + output)
+            return output
+        else :
+            logging.debug("getOneActivedEthernet fail")
+            return ""
+    def getIpConfigure(interfaceName):
+        activedConf = run_nmcli_command("nmcli -g type,device,name connection show --active|grep '802-3-ethernet:" + interfaceName + ":'|awk -F: '{print$3}'")
+        if activedConf == "success":
+            logging.debug("getOneActivedEthernet null")
+            allConf = run_nmcli_command("nmcli -g type,name connection show|grep '802-3-ethernet:'|awk -F: '{print $2}'")
+            if allConf == "success":
+                logging.debug("Configure null")
+                return ""
+            elif allConf:
+                logging.debug("allConf: " + allConf)
+                allConfList = allConf.split('\n')
+                confCounts = len(allConfList)
+                i = 0
+                allConfForInterfaceList = []
+                while i < confCounts:
+                    if interfaceName == run_nmcli_command("nmcli -g connection.interface-name connection show '" + allConfList[i] + "'"):
+                        allConfForInterfaceList.append(allConfList[i])
+                    i += 1
+                confForInterfaceCounts = len(allConfForInterfaceList)
+                j = 0
+                latestTimestamp = 0
+                index = -1
+                while j < confForInterfaceCounts:
+                    timestamp = run_nmcli_command("nmcli -g connection.timestamp connection show '" + allConfForInterfaceList[j] + "'")
+                    if latestTimestamp < int(timestamp):
+                        latestTimestamp = int(timestamp)
+                        index = j
+                    j += 1
+                if index == -1:
+                    logging.debug("get ipConfigure null ")
+                    return ""
+                ipConfigure = run_nmcli_command("nmcli -g ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns connection show '" + allConfForInterfaceList[index] + "'")
+                if ipConfigure:
+                    logging.debug("get ipConfigure: " + ipConfigure)
+                    return ipConfigure
+                else :
+                    logging.debug("get ipConfigure fail ")
+                    return ""
+            else :
+                logging.debug("allConf: fail")
+                return ""
+        elif activedConf:
+            logging.debug("getOneActivedEthernetIpConfigure: " + activedConf)
+            return run_nmcli_command("nmcli -g ipv4.method,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS connection show '" + activedConf + "'")
+        else :
+            logging.debug("getOneActivedEthernet fail")
+            return ""
     def service_thread():
         while not stopping:
             INet.add_service(
                 args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedWifi, connectActivedWifi, 
-                enableWifi, connectedWifiList, isWifiEnable, getSignalAndSecurity, connectHidedWifi,
-                forgetWifi, getStaticIpConf)
+                enableWifi, connectedWifiList, isWifiEnable, getSignalAndSecurity, connectHidedWifi, 
+                forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure)
 
     global stopping
     stopping = False
