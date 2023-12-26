@@ -4,6 +4,7 @@
  1.The service to implement network-related interfaces
  2.add forgetWifi, getStaticIpConf; modify setStaticIp, setDHCP, getAllSsid, getActivedWifi, isWifiEnable
  3.add getActivedInterface, getIpConfigure; modify return None to ''
+ 4.add getDns
 """
 import logging
 import threading
@@ -258,12 +259,32 @@ def start(args):
         else :
             logging.debug("getOneActivedEthernet fail")
             return ""
+    def getDns(interfaceName):
+        conProfile = run_nmcli_command("nmcli -g device,name connection show --active |grep '" + interfaceName + ":'|awk -F: '{print$2}'")
+        logging.debug(conProfile)
+        if conProfile == "success":
+            logging.debug(interfaceName + "not actived")
+            return ""
+        elif conProfile:
+            outDns = run_nmcli_command("nmcli -g IP4.DNS connection show " + conProfile)
+            if outDns == "success":
+                logging.debug("no Dns")
+                return ""
+            elif outDns:
+                logging.debug("has Dns")
+                return outDns
+            else:
+                logging.debug("getDns fail")
+                return ""
+        else:
+            logging.debug("getDns fail")
+            return ""
     def service_thread():
         while not stopping:
             INet.add_service(
                 args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedWifi, connectActivedWifi, 
                 enableWifi, connectedWifiList, isWifiEnable, getSignalAndSecurity, connectHidedWifi, 
-                forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure)
+                forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure, getDns)
 
     global stopping
     stopping = False

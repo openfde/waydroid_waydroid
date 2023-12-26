@@ -22,11 +22,12 @@ TRANSACTION_forgetWifi = 12
 TRANSACTION_getStaticIpConf = 13
 TRANSACTION_getActivedInterface = 14
 TRANSACTION_getIpConfigure = 15
+TRANSACTION_getDns = 16
 
 
 def add_service(args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedWifi, 
     connectActivedWifi, enableWifi, connectedWifiList, isWifiEnable, getSignalAndSecurity, 
-    connectHidedWifi, forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure):
+    connectHidedWifi, forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure, getDns):
     helpers.drivers.loadBinderNodes(args)
     try:
         serviceManager = gbinder.ServiceManager("/dev/" + args.BINDER_DRIVER, args.SERVICE_MANAGER_PROTOCOL, args.BINDER_PROTOCOL)
@@ -114,6 +115,11 @@ def add_service(args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedW
         if code == TRANSACTION_getIpConfigure:
             arg1 = reader.read_string16()
             ret = getIpConfigure(arg1)
+            local_response.append_int32(0)
+            local_response.append_string16(ret)
+        if code == TRANSACTION_getDns:
+            arg1 = reader.read_string16()
+            ret = getDns(arg1)
             local_response.append_int32(0)
             local_response.append_string16(ret)
         return local_response, 0
