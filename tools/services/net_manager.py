@@ -5,6 +5,7 @@
  2.add forgetWifi, getStaticIpConf; modify setStaticIp, setDHCP, getAllSsid, getActivedWifi, isWifiEnable
  3.add getActivedInterface, getIpConfigure; modify return None to ''
  4.add getDns
+ 5.add getLans, getLansAndWlans, getLanAndWlanIpConfigurations
 """
 import logging
 import threading
@@ -28,6 +29,7 @@ WifiStatusNoDevice = 2
 def start(args):
     def run_nmcli_command(command):
         try:
+            #logging.debug(command)
             output = subprocess.check_output(command, shell=True, universal_newlines=True)
             if output:
                 return output.strip()
@@ -279,12 +281,106 @@ def start(args):
         else:
             logging.debug("getDns fail")
             return ""
+    def getLans():
+        physicalEthernets = run_nmcli_command('''nmcli -g device,type device status |grep ':ethernet'|awk -F: '{print$1}' | grep -v "`ls /sys/devices/virtual/net/`"''')
+        if physicalEthernets == "success":
+            logging.debug("getLans: null")
+            return ""
+        elif physicalEthernets:
+            logging.debug("getLans: " + physicalEthernets)
+            return physicalEthernets
+        else :
+            logging.debug("getLans fail")
+            return ""
+    def getLansAndWlans():
+        physicalEthernets = getLans()
+        physicalWlans = run_nmcli_command("nmcli -g device,type device status |grep ':wifi'|grep -v ':wifi-p2p'|awk -F: '{print$1}'")
+        if physicalWlans == "success":
+            logging.debug("physicalWlans: null")
+            physicalWlans = ''
+        elif physicalWlans:
+            logging.debug("physicalWlans: " + physicalWlans)
+        else :
+            logging.debug("physicalWlans fail")
+            physicalWlans = ''
+        if physicalEthernets != '' and physicalWlans != '':
+            return physicalEthernets + '\n' + physicalWlans
+        elif physicalEthernets != '':
+            return physicalEthernets
+        elif physicalWlans != '':
+            return physicalWlans
+        else :
+            return ""
+    def getLanAndWlanIpConfigurations():
+        ret = ''
+        physicalLans = run_nmcli_command('''nmcli -g device,type device status |grep ':ethernet'|awk -F: '{print$1}' | grep -v "`ls /sys/devices/virtual/net/`"''')
+        if physicalLans == "success":
+            logging.debug("physicalLans: null")
+        elif physicalLans:
+            logging.debug("physicalLans: " + physicalLans)
+            physicalLansList = physicalLans.split('\n')
+            lanCounts = len(physicalLansList)
+            i = 0
+            ipConfigurationsList = []
+            while i < lanCounts:
+                #logging.debug("physicalLansList: " + str(i) + " :" + physicalLansList[i])
+                ipConfiguration = run_nmcli_command("nmcli -g IP4.ADDRESS,IP4.GATEWAY,IP4.DNS device show " + physicalLansList[i])
+                if ipConfiguration == "success":
+                    logging.debug("Lancon: null")
+                elif ipConfiguration:
+                    ipConfigurationsList.append(physicalLansList[i] + "#" + ipConfiguration.replace('\n', '#'))
+                else :
+                    logging.debug("Lancon: error")
+                i += 1
+            ipConfigurationCounts = len(ipConfigurationsList)
+            j = 0
+            while j < ipConfigurationCounts:
+                #logging.debug("ipConfiguration: " + str(j) + " :" + ipConfigurationsList[j])
+                if j != 0:
+                    ret = ret + ';' + ipConfigurationsList[j]
+                else :
+                    ret = ipConfigurationsList[j]
+                j += 1
+        else :
+            logging.debug("physicalLans fail")
+        physicalWlans = run_nmcli_command("nmcli -g device,type device status |grep ':wifi'|grep -v ':wifi-p2p'|awk -F: '{print$1}'")
+        if physicalWlans == "success":
+            logging.debug("no wlan")
+        elif physicalWlans:
+            logging.debug("physicalWlans: " + physicalWlans)
+            physicalWlansList = physicalWlans.split('\n')
+            wlanCounts = len(physicalWlansList)
+            i = 0
+            ipConfigurationsList = []
+            while i < wlanCounts:
+                #logging.debug("physicalWlansList: " + str(i) + " :" + physicalWlansList[i])
+                ipConfiguration = run_nmcli_command("nmcli -g IP4.ADDRESS,IP4.GATEWAY,IP4.DNS device show " + physicalWlansList[i])
+                if ipConfiguration == "success":
+                    logging.debug("Wlancon: null")
+                elif ipConfiguration:
+                    ipConfigurationsList.append(physicalWlansList[i] + "#" + ipConfiguration.replace('\n', '#'))
+                else :
+                    logging.debug("Wlancon: error")
+                i += 1
+            ipConfigurationCounts = len(ipConfigurationsList)
+            j = 0
+            while j < ipConfigurationCounts:
+                #logging.debug("ipConfiguration: " + str(j) + " :" + ipConfigurationsList[j])
+                if j != 0 or ret != '':
+                    ret = ret + ';' + ipConfigurationsList[j]
+                else :
+                    ret = ipConfigurationsList[j]
+                j += 1
+        else :
+            logging.debug("physicalWlans error")
+        return ret
     def service_thread():
         while not stopping:
             INet.add_service(
                 args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedWifi, connectActivedWifi, 
                 enableWifi, connectedWifiList, isWifiEnable, getSignalAndSecurity, connectHidedWifi, 
-                forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure, getDns)
+                forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure, getDns, getLans, 
+                getLansAndWlans, getLanAndWlanIpConfigurations)
 
     global stopping
     stopping = False
