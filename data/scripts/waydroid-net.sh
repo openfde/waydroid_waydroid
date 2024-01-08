@@ -321,6 +321,13 @@ fde_start() {
 fde_stop() {
     [ -f "${varrun}/network_up" ] || [ "$1" = "force" ] || { echo "waydroid-net isn't running"; exit 1; }
     rm -f "${varrun}"/network_up
+    for r in 10500 13000 14000 19000
+    do
+        while ip rule del pref $r 2>/dev/null
+        do
+            true;
+        done
+    done
 }
 
 # See how we were called.
