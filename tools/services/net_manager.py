@@ -94,12 +94,12 @@ def start(args):
     def getActivedWifi():
         output = run_nmcli_command("nmcli -g IN-USE,SSID device wifi|grep '*:'|sed -n 1p")
         logging.debug(output)
-        if output:
-            logging.debug("has ActivedWifi")
-            return output[2:]
-        else:
+        if (output == "success") or not output:
             logging.debug("no ActivedWifi")
             return ""
+        else:
+            logging.debug("has ActivedWifi")
+            return output[2:]
     def connectActivedWifi(ssid, connect):
         logging.debug("ssid: {}, connect: {}".format(ssid, connect))
         if connect == 1:
