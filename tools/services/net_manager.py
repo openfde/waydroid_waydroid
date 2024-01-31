@@ -81,7 +81,7 @@ def start(args):
         else:
             logging.debug("getAllSsid fail")
             return ""
-    def connectSsid(ssid, passwd):
+    def connectSsidThread(ssid, passwd):
         logging.debug("ssid: {}, passwd: {}".format(ssid, passwd))
         output = run_nmcli_command("nmcli device wifi connect '" + ssid + "' password '" + passwd + "'")
         logging.debug(output)
@@ -91,6 +91,9 @@ def start(args):
         else:
             logging.debug("connectSsid fail")
             return 1
+    def connectSsid(ssid, passwd):
+        threading.Thread(target=connectSsidThread, args=(ssid, passwd)).start()
+        return 0
     def getActivedWifi():
         output = run_nmcli_command("nmcli -g IN-USE,SSID device wifi|grep '*:'|sed -n 1p")
         logging.debug(output)
