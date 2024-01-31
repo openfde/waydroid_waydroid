@@ -101,7 +101,7 @@ def probeBinderDriver(args):
             tools.helpers.run.user(args, command, check=False)
             allocBinderNodes(args, binder_dev_nodes)
             command = ["ln", "-s"]
-            command.extend(glob.glob("/dev/binderfs/*"))
+            command.extend(glob.glob("/dev/binderfs/fde-*"))
             command.append("/dev/")
             tools.helpers.run.user(args, command, check=False)
 
