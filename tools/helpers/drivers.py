@@ -10,22 +10,19 @@ import tools.helpers.run
 
 
 BINDER_DRIVERS = [
-    "anbox-binder",
+    "fde-binder",
     "puddlejumper",
     "bonder",
-    "binder"
 ]
 VNDBINDER_DRIVERS = [
-    "anbox-vndbinder",
+    "fde-vndbinder",
     "vndpuddlejumper",
     "vndbonder",
-    "vndbinder"
 ]
 HWBINDER_DRIVERS = [
-    "anbox-hwbinder",
+    "fde-hwbinder",
     "hwpuddlejumper",
     "hwbonder",
-    "hwbinder"
 ]
 
 
@@ -104,7 +101,7 @@ def probeBinderDriver(args):
             tools.helpers.run.user(args, command, check=False)
             allocBinderNodes(args, binder_dev_nodes)
             command = ["ln", "-s"]
-            command.extend(glob.glob("/dev/binderfs/*"))
+            command.extend(glob.glob("/dev/binderfs/fde-*"))
             command.append("/dev/")
             tools.helpers.run.user(args, command, check=False)
 
