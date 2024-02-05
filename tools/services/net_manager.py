@@ -377,13 +377,24 @@ def start(args):
         else :
             logging.debug("physicalWlans error")
         return ret
+    def ipConfiged(interface):
+        ipConfiguration = run_nmcli_command("nmcli -g IP4.ADDRESS,IP4.GATEWAY,IP4.DNS device show " + interface)
+        if ipConfiguration == "success":
+            logging.debug("ipConfiged: null")
+            return 0
+        elif ipConfiguration:
+            logging.debug("ipConfiged: ok")
+            return 1
+        else :
+            logging.debug("ipConfiged: error")
+            return 0
     def service_thread():
         while not stopping:
             INet.add_service(
                 args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedWifi, connectActivedWifi, 
                 enableWifi, connectedWifiList, isWifiEnable, getSignalAndSecurity, connectHidedWifi, 
                 forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure, getDns, getLans, 
-                getLansAndWlans, getLanAndWlanIpConfigurations)
+                getLansAndWlans, getLanAndWlanIpConfigurations, ipConfiged)
 
     global stopping
     stopping = False
