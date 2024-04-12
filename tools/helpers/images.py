@@ -145,7 +145,7 @@ def make_prop(args, cfg, full_props_path):
     props.append("ro.build.display.id=openfde:11/RQ3A.211001.001/user.electr.20230318.111310:user/release-keys")
 
     props.append("ro.build.tags=release-keys")
-    props.append("ro.build.description=openfde-user 11 RQ3A.211001.001 eng.electr.20230318.111310 release-keys")
+    props.append("ro.build.description=openfde-user 11 RQ3A.211001.001 user.electr.20230318.111310 release-keys")
     props.append("ro.vendor.build.fingerprint=openfde:11/RQ3A.211001.001/user.electr.20230318.111310:user/release-keys")
     props.append("ro.vendor.build.id=RQ3A.211001.001")
     props.append("ro.vendor.build.tags=release-keys")
