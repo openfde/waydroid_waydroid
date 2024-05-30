@@ -6,7 +6,7 @@ from tools.interfaces import IClipboard
 import os 
 
 try:
-     if  'FDE_USE_X11' in os.environ:
+    if 'FDE_USE_X11' in os.environ:
         del os.environ['WAYLAND_DISPLAY']
         os.environ['DISPLAY'] = ":0"
     else:
