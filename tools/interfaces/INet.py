@@ -40,7 +40,7 @@ def add_service(args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedW
         serviceManager = gbinder.ServiceManager("/dev/" + args.BINDER_DRIVER)
 
     def response_handler(req, code, flags):
-        logging.debug(
+        logging.verbose(
             "{}: Received transaction: {}".format(SERVICE_NAME, code))
         reader = req.init_reader()
         local_response = response.new_reply()
@@ -54,96 +54,100 @@ def add_service(args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedW
             ret = setStaticIp(arg1, arg2, arg3, arg4, arg5, arg6)
             local_response.append_int32(0)
             local_response.append_int32(ret)
-        if code == TRANSACTION_setDHCP:
+        elif code == TRANSACTION_setDHCP:
             arg1 = reader.read_string16()
             ret = setDHCP(arg1)
             local_response.append_int32(0)
             local_response.append_int32(ret)
-        if code == TRANSACTION_getAllSsid:
+        elif code == TRANSACTION_getAllSsid:
             ret = getAllSsid()
             local_response.append_int32(0)
             local_response.append_string16(ret)
-        if code == TRANSACTION_connectSsid:
+        elif code == TRANSACTION_connectSsid:
             arg1 = reader.read_string16()
             arg2 = reader.read_string16()
             ret = connectSsid(arg1, arg2)
             local_response.append_int32(0)
             local_response.append_int32(ret)
-        if code == TRANSACTION_getActivedWifi:
+        elif code == TRANSACTION_getActivedWifi:
             ret = getActivedWifi()
             local_response.append_int32(0)
             local_response.append_string16(ret)
-        if code == TRANSACTION_connectActivedWifi:
+        elif code == TRANSACTION_connectActivedWifi:
             arg1 = reader.read_string16()
             status, arg2 = reader.read_int32()
             ret = connectActivedWifi(arg1, arg2)
             local_response.append_int32(0)
             local_response.append_int32(ret)
-        if code == TRANSACTION_enableWifi:
+        elif code == TRANSACTION_enableWifi:
             status, arg1 = reader.read_int32()
             ret = enableWifi(arg1)
             local_response.append_int32(0)
             local_response.append_int32(ret)
-        if code == TRANSACTION_connectedWifiList:
+        elif code == TRANSACTION_connectedWifiList:
             ret = connectedWifiList()
             local_response.append_int32(0)
             local_response.append_string16(ret)
-        if code == TRANSACTION_isWifiEnable:
+        elif code == TRANSACTION_isWifiEnable:
             ret = isWifiEnable()
             local_response.append_int32(0)
             local_response.append_int32(ret)
-        if code == TRANSACTION_getSignalAndSecurity:
+        elif code == TRANSACTION_getSignalAndSecurity:
             arg1 = reader.read_string16()
             ret = getSignalAndSecurity(arg1)
             local_response.append_int32(0)
             local_response.append_string16(ret)
-        if code == TRANSACTION_connectHidedWifi:
+        elif code == TRANSACTION_connectHidedWifi:
             arg1 = reader.read_string16()
             arg2 = reader.read_string16()
             ret = connectHidedWifi(arg1, arg2)
             local_response.append_int32(0)
             local_response.append_int32(ret)
-        if code == TRANSACTION_forgetWifi:
+        elif code == TRANSACTION_forgetWifi:
             arg1 = reader.read_string16()
             ret = forgetWifi(arg1)
             local_response.append_int32(0)
             local_response.append_int32(ret)
-        if code == TRANSACTION_getStaticIpConf:
+        elif code == TRANSACTION_getStaticIpConf:
             arg1 = reader.read_string16()
             ret = getStaticIpConf(arg1)
             local_response.append_int32(0)
             local_response.append_string16(ret)
-        if code == TRANSACTION_getActivedInterface:
+        elif code == TRANSACTION_getActivedInterface:
             ret = getActivedInterface()
             local_response.append_int32(0)
             local_response.append_string16(ret)
-        if code == TRANSACTION_getIpConfigure:
+        elif code == TRANSACTION_getIpConfigure:
             arg1 = reader.read_string16()
             ret = getIpConfigure(arg1)
             local_response.append_int32(0)
             local_response.append_string16(ret)
-        if code == TRANSACTION_getDns:
+        elif code == TRANSACTION_getDns:
             arg1 = reader.read_string16()
             ret = getDns(arg1)
             local_response.append_int32(0)
             local_response.append_string16(ret)
-        if code == TRANSACTION_getLans:
+        elif code == TRANSACTION_getLans:
             ret = getLans()
             local_response.append_int32(0)
             local_response.append_string16(ret)
-        if code == TRANSACTION_getLansAndWlans:
+        elif code == TRANSACTION_getLansAndWlans:
             ret = getLansAndWlans()
             local_response.append_int32(0)
             local_response.append_string16(ret)
-        if code == TRANSACTION_getLanAndWlanIpConfigurations:
+        elif code == TRANSACTION_getLanAndWlanIpConfigurations:
             ret = getLanAndWlanIpConfigurations()
             local_response.append_int32(0)
             local_response.append_string16(ret)
-        if code == TRANSACTION_ipConfiged:
+        elif code == TRANSACTION_ipConfiged:
             arg1 = reader.read_string16()
             ret = ipConfiged(arg1)
             local_response.append_int32(0)
             local_response.append_int32(ret)
+        else:
+            logging.error("unknown code: {}".format(code))
+            local_response.append_int32(0)
+            local_response.append_int32(0)
         return local_response, 0
 
     def binder_presence():
