@@ -74,7 +74,7 @@ def start(args, session, unlocked_cb=None):
             logging.info("Android with user {} is ready, post fs fusing".format(uid))
             response.raise_for_status()  # Raise an exception if the request was unsuccessful
         except requests.exceptions.RequestException as e:
-            logger.warning("post fs_fuing failed")
+            logging.warning("post fs_fuing failed")
 
         """
         tools.helpers.net.adb_connect(args)
