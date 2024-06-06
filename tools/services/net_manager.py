@@ -39,54 +39,54 @@ def start(args):
             #logging.debug("Error executing nmcli command:", e)
             return None
     def setStaticIp(interfaceName, ipAddress, networkPrefixLength, gateway, dns1, dns2):
-        logging.debug(
+        logging.verbose(
             "interfaceName: {}, ipAddress: {}, networkPrefixLength: {}, gateway: {}, dns1: {}, dns2: {}" \
             .format(interfaceName, ipAddress, networkPrefixLength, gateway, dns1, dns2))
         output = run_nmcli_command("nmcli con modify Openfde" + interfaceName + " ifname " + interfaceName + " ipv4.addresses " + ipAddress + "/" + str(networkPrefixLength) + " ipv4.gateway " + gateway + " ipv4.dns '" + dns1 + " " + dns2 + "' ipv4.method 'manual'")
-        logging.debug(output)
+        logging.verbose(output)
         if not output:
-            logging.debug("nmcli con add:")
+            logging.verbose("nmcli con add:")
             output = run_nmcli_command("nmcli con add con-name Openfde" + interfaceName + " ifname " + interfaceName + "  type ethernet ip4 " + ipAddress + "/" + str(networkPrefixLength) + " gw4 " + gateway + " ipv4.dns '" + dns1 + " " + dns2 + "' ipv4.method 'manual'")
         output = run_nmcli_command("nmcli connection up Openfde" + interfaceName)
         if output:
-            logging.debug("set setStaticIp success")
+            logging.verbose("set setStaticIp success")
             return 0
         else:
             logging.debug("set setStaticIp fail")
             return 1
     def setDHCP(interfaceName):
-        logging.debug("interfaceName: {}".format(interfaceName))
+        logging.verbose("interfaceName: {}".format(interfaceName))
         output = run_nmcli_command("nmcli con modify Openfde" + interfaceName + " ifname " + interfaceName + " ipv4.method 'auto'")
-        logging.debug(output)
+        logging.verbose(output)
         if not output:
-            logging.debug("nmcli con add:")
+            logging.verbose("nmcli con add:")
             output = run_nmcli_command("nmcli con add con-name Openfde" + interfaceName + " ifname " + interfaceName + " type ethernet ipv4.method 'auto'")
         output = run_nmcli_command("nmcli connection up Openfde" + interfaceName)
         if output:
-            logging.debug("set setDHCP success")
+            logging.verbose("set setDHCP success")
             return 0
         else:
             logging.debug("set setDHCP fail")
             return 1
     def getAllSsid():
-        logging.debug("getAllSsid")
+        logging.verbose("getAllSsid")
         output = run_nmcli_command("nmcli -t -f ssid,signal,security,in-use dev wifi")
-        logging.debug(output)
+        logging.verbose(output)
         if output == "success":
-            logging.debug("none any Ssid")
+            logging.verbose("none any Ssid")
             return ""
         elif output:
-            logging.debug("getAllSsid success")
+            logging.verbose("getAllSsid success")
             return output
         else:
             logging.debug("getAllSsid fail")
             return ""
     def connectSsidThread(ssid, passwd):
-        logging.debug("ssid: {}, passwd: {}".format(ssid, passwd))
+        logging.verbose("ssid: {}, passwd: {}".format(ssid, passwd))
         output = run_nmcli_command("nmcli device wifi connect '" + ssid + "' password '" + passwd + "'")
-        logging.debug(output)
+        logging.verbose(output)
         if output:
-            logging.debug("connectSsid success")
+            logging.verbose("connectSsid success")
             return 0
         else:
             logging.debug("connectSsid fail")
@@ -96,112 +96,112 @@ def start(args):
         return 0
     def getActivedWifi():
         output = run_nmcli_command("nmcli -g IN-USE,SSID device wifi|grep '*:'|sed -n 1p")
-        logging.debug(output)
+        logging.verbose(output)
         if (output == "success") or not output:
-            logging.debug("no ActivedWifi")
+            logging.verbose("no ActivedWifi")
             return ""
         else:
-            logging.debug("has ActivedWifi")
+            logging.verbose("has ActivedWifi")
             return output[2:]
     def connectActivedWifi(ssid, connect):
-        logging.debug("ssid: {}, connect: {}".format(ssid, connect))
+        logging.verbose("ssid: {}, connect: {}".format(ssid, connect))
         if connect == 1:
             output = run_nmcli_command("nmcli dev wifi connect '" + ssid + "'")
         elif connect == 0:
             output = run_nmcli_command("nmcli connection down '" + ssid + "'")
-        logging.debug(output)
+        logging.verbose(output)
         if output:
-            logging.debug("connectActivedWifi success")
+            logging.verbose("connectActivedWifi success")
             return 0
         else:
             logging.debug("connectActivedWifi fail")
             return 1
     def enableWifi(enable):
-        logging.debug("enable: {}".format(enable))
+        logging.verbose("enable: {}".format(enable))
         if enable == 1:
             output = run_nmcli_command("nmcli radio wifi on")
         elif enable == 0:
             output = run_nmcli_command("nmcli radio wifi off")
-        logging.debug(output)
+        logging.verbose(output)
         if output:
-            logging.debug("enableWifi success")
+            logging.verbose("enableWifi success")
             return 0
         else:
             logging.debug("enableWifi fail")
             return 1
     def connectedWifiList():
         output = run_nmcli_command("nmcli -g NAME,TYPE connection show|grep '802-11-wireless'|awk -F: '{print $1}'|sort -u")
-        logging.debug(output)
+        logging.verbose(output)
         if output == "success":
-            logging.debug("connectedWifiList success none")
+            logging.verbose("connectedWifiList success none")
             return ""
         elif output:
-            logging.debug("connectedWifiList success has")
+            logging.verbose("connectedWifiList success has")
             return output
         else:
             logging.debug("connectedWifiList fail")
             return ""
     def isWifiEnable():
         output = run_nmcli_command("nmcli -g TYPE,STATE device status|grep wifi|grep 'wifi:unavailable'")
-        logging.debug(output)
+        logging.verbose(output)
         if output == "wifi:unavailable":
-            logging.debug("WifiStatusDisable")
+            logging.verbose("WifiStatusDisable")
             return WifiStatusDisable
         else:
             output = run_nmcli_command("nmcli -g TYPE,STATE device status|grep 'wifi:'")
             if output:
-                logging.debug("WifiStatusEnable")
+                logging.verbose("WifiStatusEnable")
                 return WifiStatusEnable
             else:
-                logging.debug("WifiStatusNoDevice")
+                logging.verbose("WifiStatusNoDevice")
                 return WifiStatusNoDevice
     def getSignalAndSecurity(ssid):
         output = run_nmcli_command("nmcli -g SSID,SIGNAL,SECURITY dev wifi|grep '" + ssid + "'|awk -F: '{print $2} {print $3}'")
-        logging.debug(output)
+        logging.verbose(output)
         if output == "success":
             logging.debug("no SignalAndSecurity")
             return ""
         elif output:
-            logging.debug("has SignalAndSecurity")
+            logging.verbose("has SignalAndSecurity")
             return output
         else:
             logging.debug("getSignalAndSecurity fail")
             return ""
     def connectHidedWifi(ssid, passwd):
-        logging.debug("ssid: {}, passwd: {}".format(ssid, passwd))
+        logging.verbose("ssid: {}, passwd: {}".format(ssid, passwd))
 
         output = run_nmcli_command("nmcli dev wifi connect '" + ssid + "' password '" + passwd + "' hidden yes")
         tryCount = 8
-        logging.debug(output)
+        logging.verbose(output)
         while not output and tryCount != 0:
             time.sleep(2)
             output = run_nmcli_command("nmcli dev wifi connect '" + ssid + "' password '" + passwd + "' hidden yes")
             tryCount -= 1
-            logging.debug("connectActivedWifi success")
+            logging.verbose("connectActivedWifi success")
         if output:
-            logging.debug("connectHidedWifi success")
+            logging.verbose("connectHidedWifi success")
             return 0
         else:
             logging.debug("connectHidedWifi fail")
             return 1
     def forgetWifi(ssid):
-        logging.debug("ssid: {}".format(ssid))
+        logging.verbose("ssid: {}".format(ssid))
         output = run_nmcli_command("nmcli connection delete '" + ssid + "'")
-        logging.debug(output)
+        logging.verbose(output)
         if output:
-            logging.debug("forgetWifi success")
+            logging.verbose("forgetWifi success")
             return 0
         else:
             logging.debug("forgetWifi fail")
             return 1
     def getStaticIpConf(interfaceName):
         output = run_nmcli_command("nmcli -t -f ipv4.addresses,ipv4.gateway,ipv4.dns connection show Openfde" + interfaceName)
-        logging.debug(output)
+        logging.verbose(output)
         if output == "success":
-            logging.debug("no StaticIpConf")
+            logging.verbose("no StaticIpConf")
             return ""
         elif output:
-            logging.debug("has StaticIpConf")
+            logging.verbose("has StaticIpConf")
             return output
         else:
             logging.debug("getStaticIpConf fail")
@@ -212,7 +212,7 @@ def start(args):
             logging.debug("getOneActivedEthernet: null")
             return ""
         elif output:
-            logging.debug("getOneActivedEthernet: " + output)
+            logging.verbose("getOneActivedEthernet: " + output)
             return output
         else :
             logging.debug("getOneActivedEthernet fail")
@@ -226,7 +226,7 @@ def start(args):
                 logging.debug("Configure null")
                 return ""
             elif allConf:
-                logging.debug("allConf: " + allConf)
+                logging.verbose("allConf: " + allConf)
                 allConfList = allConf.split('\n')
                 confCounts = len(allConfList)
                 i = 0
@@ -250,7 +250,7 @@ def start(args):
                     return ""
                 ipConfigure = run_nmcli_command("nmcli -g ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns connection show '" + allConfForInterfaceList[index] + "'")
                 if ipConfigure:
-                    logging.debug("get ipConfigure: " + ipConfigure)
+                    logging.verbose("get ipConfigure: " + ipConfigure)
                     return ipConfigure
                 else :
                     logging.debug("get ipConfigure fail ")
@@ -259,14 +259,14 @@ def start(args):
                 logging.debug("allConf: fail")
                 return ""
         elif activedConf:
-            logging.debug("getOneActivedEthernetIpConfigure: " + activedConf)
+            logging.verbose("getOneActivedEthernetIpConfigure: " + activedConf)
             return run_nmcli_command("nmcli -g ipv4.method,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS connection show '" + activedConf + "'")
         else :
             logging.debug("getOneActivedEthernet fail")
             return ""
     def getDns(interfaceName):
         conProfile = run_nmcli_command("nmcli -g device,name connection show --active |grep '" + interfaceName + ":'|awk -F: '{print$2}'")
-        logging.debug(conProfile)
+        logging.verbose(conProfile)
         if conProfile == "success":
             logging.debug(interfaceName + "not actived")
             return ""
@@ -276,7 +276,7 @@ def start(args):
                 logging.debug("no Dns")
                 return ""
             elif outDns:
-                logging.debug("has Dns")
+                logging.verbose("has Dns")
                 return outDns
             else:
                 logging.debug("getDns fail")
@@ -290,7 +290,7 @@ def start(args):
             logging.debug("getLans: null")
             return ""
         elif physicalEthernets:
-            logging.debug("getLans: " + physicalEthernets)
+            logging.verbose("getLans: " + physicalEthernets)
             return physicalEthernets
         else :
             logging.debug("getLans fail")
@@ -302,7 +302,7 @@ def start(args):
             logging.debug("physicalWlans: null")
             physicalWlans = ''
         elif physicalWlans:
-            logging.debug("physicalWlans: " + physicalWlans)
+            logging.verbose("physicalWlans: " + physicalWlans)
         else :
             logging.debug("physicalWlans fail")
             physicalWlans = ''
@@ -320,7 +320,7 @@ def start(args):
         if physicalLans == "success":
             logging.debug("physicalLans: null")
         elif physicalLans:
-            logging.debug("physicalLans: " + physicalLans)
+            logging.verbose("physicalLans: " + physicalLans)
             physicalLansList = physicalLans.split('\n')
             lanCounts = len(physicalLansList)
             i = 0
@@ -350,7 +350,7 @@ def start(args):
         if physicalWlans == "success":
             logging.debug("no wlan")
         elif physicalWlans:
-            logging.debug("physicalWlans: " + physicalWlans)
+            logging.verbose("physicalWlans: " + physicalWlans)
             physicalWlansList = physicalWlans.split('\n')
             wlanCounts = len(physicalWlansList)
             i = 0
@@ -383,7 +383,7 @@ def start(args):
             logging.debug("ipConfiged: null")
             return 0
         elif ipConfiguration:
-            logging.debug("ipConfiged: ok")
+            logging.verbose("ipConfiged: ok")
             return 1
         else :
             logging.debug("ipConfiged: error")
