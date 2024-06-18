@@ -29,7 +29,7 @@ def main():
         args.cache = {}
         args.work = config.defaults["work"]
         args.config = args.work + "/waydroid.cfg"
-        args.log = args.work + "/waydroid.log"
+        args.log = "/var/log" + "/waydroid.log"
         args.sudo_timer = True
         args.timeout = 1800
 
