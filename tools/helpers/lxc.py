@@ -203,6 +203,9 @@ def generate_session_lxc_config(args, session):
     pulse_socket = os.path.join(session["pulse_runtime_path"], "native")
     make_entry(pulse_socket)
 
+    pulse_cookie = os.path.join(session["pulse_runtime_path"], "cookie")
+    make_entry(session["pulse_cookie_path"], pulse_cookie[1:])
+
     if not make_entry(session["waydroid_data"], "data", options="rbind 0 0"):
         raise OSError("Failed to bind userdata")
     if not make_entry("/volumes", "volumes", options="rbind 0 0"):
