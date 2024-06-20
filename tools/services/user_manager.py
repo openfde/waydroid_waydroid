@@ -67,7 +67,6 @@ def start(args, session, unlocked_cb=None):
 
     def userUnlocked(uid):
         logging.info("Android with user {} is ready".format(uid))
-        """
         url = "http://127.0.0.1:18080/api/v1/fs_fusing"  # Replace with the desired URL
 
         try:
@@ -76,7 +75,6 @@ def start(args, session, unlocked_cb=None):
             response.raise_for_status()  # Raise an exception if the request was unsuccessful
         except requests.exceptions.RequestException as e:
             logging.warning("post fs_fuing failed")
-        """
 
         """
         tools.helpers.net.adb_connect(args)
