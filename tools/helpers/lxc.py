@@ -210,6 +210,8 @@ def generate_session_lxc_config(args, session):
         raise OSError("Failed to bind userdata")
     if not make_entry("/volumes", "volumes", options="rbind 0 0"):
         raise OSError("Failed to bind volumes")
+    if not make_entry("/var/lib/fde/sockets", "sockets", options="bind,create=dir 0 0"):
+        raise OSError("Failed to bind sockets")
 
     lxc_path = tools.config.defaults["lxc"] + "/waydroid"
     config_nodes_tmp_path = args.work + "/config_session"
@@ -265,7 +267,10 @@ def make_base_props(args):
             if vulkan == "powervr":
                 gralloc = "ft2004"
                 egl = "powervr"
-            else:
+            elif vulkan == "ranchu":
+                gralloc = "ranchu"
+                egl = "emulation"
+            else :
                 gralloc = "gbm"
                 egl = "mesa"
         else:
