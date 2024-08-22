@@ -414,7 +414,7 @@ def wait_for_running(args):
 
 def start(args):
     command = ["lxc-start", "-P", tools.config.defaults["lxc"],
-               "-F", "-n", "waydroid", "--", "/init"]
+               "-F", "-n", "waydroid", "--", "/init","androidboot.hardware=qcom"]
     tools.helpers.run.user(args, command, output="background")
     wait_for_running(args)
     # Workaround lxc-start changing stdout/stderr permissions to 700
