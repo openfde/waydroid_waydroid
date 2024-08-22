@@ -28,7 +28,8 @@ def getVulkanDriver(args, dev):
         "panfrost": "panfrost",
         "msm": "freedreno",
         "vc4": "broadcom",
-        "pvrsrvkm": "powervr"
+        "pvrsrvkm": "powervr",
+        "jmgpu" :"ranchu"
     }
     kernel_driver = getKernelDriver(args, dev)
     if kernel_driver in mapping:
