@@ -132,6 +132,7 @@ def make_prop(args, cfg, full_props_path):
     if dpi != "0":
         props.append("ro.sf.lcd_density=" + dpi)
 
+    props.append("ro.openfde.version=20230318.111310")
     props.append("ro.product.brand=google")
     props.append("ro.product.manufacturer=Google")
     props.append("ro.system.build.product=redfin")
@@ -139,18 +140,7 @@ def make_prop(args, cfg, full_props_path):
     props.append("ro.product.device=redfin")
     props.append("ro.product.model=Pixel 5")
     props.append("ro.system.build.flavor=redfin-user")
-    props.append("ro.build.fingerprint=openfde/RQ3A.211001.001/user.electr.20230318.111310:user/release-keys")
-    props.append("ro.system.build.description=openfde-user 11 RQ3A.211001.001 user.electr.20230318.111310 release-keys")
-    props.append("ro.bootimage.build.fingerprint=openfde:11/RQ3A.211001.001/user.electr.20230318.111310:user/release-keys")
-    props.append("ro.build.display.id=openfde:11/RQ3A.211001.001/user.electr.20230318.111310:user/release-keys")
 
-    props.append("ro.build.tags=release-keys")
-    props.append("ro.build.description=openfde-user 11 RQ3A.211001.001 user.electr.20230318.111310 release-keys")
-    props.append("ro.vendor.build.fingerprint=openfde:11/RQ3A.211001.001/user.electr.20230318.111310:user/release-keys")
-    props.append("ro.vendor.build.id=RQ3A.211001.001")
-    props.append("ro.vendor.build.tags=release-keys")
-    props.append("ro.vendor.build.type=user")
-    props.append("ro.odm.build.tags=release-keys")
     final_props = open(full_props_path, "w")
     for prop in props:
         final_props.write(prop + "\n")

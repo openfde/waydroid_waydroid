@@ -411,10 +411,25 @@ def wait_for_running(args):
         time.sleep(1)
     if lxc_status != "RUNNING":
         raise OSError("container failed to start")
+    def get_cpu_serial():
+    try:
+        # call dmidecode
+        result = subprocess.run(['sudo', 'dmidecode', '-t', 'processor'],
+                                capture_output=True, text=True, check=True)
+        serial_numbers = re.findall(r'Serial Number:\s+(\S+)', result.stdout)
+        return serial_numbers
+    except subprocess.CalledProcessError as e:
+        print(f"Error: {e}")
+        return None
 
 def start(args):
+    cpu_serials = get_cpu_serial()
+    serial="31662911840022P"
+    if cpu_serials:
+        for serial in cpu_serials:
+            break
     command = ["lxc-start", "-P", tools.config.defaults["lxc"],
-               "-F", "-n", "waydroid", "--", "/init","androidboot.hardware=qcom"]
+               "-F", "-n", "waydroid", "--", "/init"," androidboot.hardware=qcom ", " androidboot.serialno="+serial, " androidboot.mode=normal "]
     tools.helpers.run.user(args, command, output="background")
     wait_for_running(args)
     # Workaround lxc-start changing stdout/stderr permissions to 700
