@@ -411,7 +411,8 @@ def wait_for_running(args):
         time.sleep(1)
     if lxc_status != "RUNNING":
         raise OSError("container failed to start")
-    def get_cpu_serial():
+
+def get_cpu_serial():
     try:
         # call dmidecode
         result = subprocess.run(['sudo', 'dmidecode', '-t', 'processor'],
