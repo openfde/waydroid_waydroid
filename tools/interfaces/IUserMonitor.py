@@ -4,8 +4,8 @@ from tools import helpers
 from gi.repository import GLib
 
 
-INTERFACE = "lineageos.waydroid.IUserMonitor"
-SERVICE_NAME = "waydroidusermonitor"
+INTERFACE = "android.openfde.IUserMonitor"
+SERVICE_NAME = "openfdeusermonitor"
 
 TRANSACTION_userUnlocked = 1
 TRANSACTION_packageStateChanged = 2

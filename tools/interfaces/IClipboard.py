@@ -4,8 +4,8 @@ from tools import helpers
 from gi.repository import GLib
 
 
-INTERFACE = "lineageos.waydroid.IClipboard"
-SERVICE_NAME = "waydroidclipboard"
+INTERFACE = "android.openfde.IClipboard"
+SERVICE_NAME = "openfdeclipboard"
 
 TRANSACTION_sendClipboardData = 1
 TRANSACTION_getClipboardData = 2
