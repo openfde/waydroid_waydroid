@@ -6,8 +6,8 @@ from gi.repository import GLib
 import signal
 
 
-INTERFACE = "lineageos.waydroid.IPlatform"
-SERVICE_NAME = "waydroidplatform"
+INTERFACE = "android.openfde.IPlatform"
+SERVICE_NAME = "openfdeplatform"
 
 TRANSACTION_getprop = 1
 TRANSACTION_setprop = 2

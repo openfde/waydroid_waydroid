@@ -4,7 +4,7 @@ from tools import helpers
 from gi.repository import GLib
 
 
-INTERFACE = "lineageos.waydroid.INet"
+INTERFACE = "android.openfde.INet"
 SERVICE_NAME = "fdenet"
 
 TRANSACTION_setStaticIp = 1

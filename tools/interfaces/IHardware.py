@@ -4,8 +4,8 @@ from tools import helpers
 from gi.repository import GLib
 
 
-INTERFACE = "lineageos.waydroid.IHardware"
-SERVICE_NAME = "waydroidhardware"
+INTERFACE = "android.openfde.IHardware"
+SERVICE_NAME = "openfdehardware"
 
 TRANSACTION_enableNFC = 1
 TRANSACTION_enableBluetooth = 2
