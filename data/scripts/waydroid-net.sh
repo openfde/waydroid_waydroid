@@ -197,7 +197,7 @@ start() {
         mkdir "${varlib}"/misc
     fi
 
-    dnsmasq $LXC_DHCP_CONFILE_ARG $LXC_DOMAIN_ARG $LXC_DHCP_PING_ARG -u ${DNSMASQ_USER} \
+    /usr/lib/waydroid/data/bin/dnsmasq $LXC_DHCP_CONFILE_ARG $LXC_DOMAIN_ARG $LXC_DHCP_PING_ARG -u ${DNSMASQ_USER} \
             --strict-order --bind-interfaces --pid-file="${varrun}"/dnsmasq.pid \
             --listen-address ${LXC_ADDR} --dhcp-range ${LXC_DHCP_RANGE} \
             --dhcp-lease-max=${LXC_DHCP_MAX} --dhcp-no-override \
@@ -333,11 +333,13 @@ fde_stop() {
 # See how we were called.
 case "$1" in
     start)
-        fde_start
+        #fde_start
+	start
     ;;
 
     stop)
-        fde_stop
+        #fde_stop
+	stop
     ;;
 
     restart|reload|force-reload)

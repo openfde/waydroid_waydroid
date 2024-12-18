@@ -125,7 +125,9 @@ def generate_nodes_lxc_config(args):
     make_entry("/etc/hosts","system/etc/hosts", options="bind,optional 0 0")
     #cpuinfo
     make_entry("/usr/lib/waydroid/data/configs/cpuinfo","proc/cpuinfo", options="bind,optional 0 0")
-
+    # apex need
+    make_entry("/dev/loop-control")
+    make_entry("/dev", "dev/block", options="rbind,create=dir,optional 0 0")
     return nodes
 
 LXC_APPARMOR_PROFILE = "lxc-waydroid"
@@ -280,7 +282,7 @@ def make_base_props(args):
         else:
             gralloc = "default"
             egl = "swiftshader"
-        props.append("debug.stagefright.ccodec=0")
+        #props.append("debug.stagefright.ccodec=0")
     props.append("ro.hardware.gralloc=" + gralloc)
 
     if egl != "":
@@ -330,8 +332,8 @@ def make_base_props(args):
 
     props.append("waydroid.tools_version=" + tools.config.version)
 
-    if args.vendor_type == "MAINLINE":
-        props.append("ro.vndk.lite=true")
+    #if args.vendor_type == "MAINLINE":
+    #    props.append("ro.vndk.lite=true")
 
     for product in ["brand", "device", "manufacturer", "model", "name"]:
         prop_product = tools.helpers.props.host_get(

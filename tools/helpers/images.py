@@ -118,16 +118,16 @@ def make_prop(args, cfg, full_props_path):
             value = value.replace("/mnt/", "/mnt_extra/")
             props.append(key + "=" + value)
 
-    add_prop("waydroid.host.user", "user_name")
-    add_prop("waydroid.host.uid", "user_id")
-    add_prop("waydroid.host.gid", "group_id")
-    add_prop("waydroid.host_data_path", "waydroid_data")
-    add_prop("waydroid.xdg_runtime_dir", "xdg_runtime_dir")
-    add_prop("waydroid.pulse_runtime_path", "pulse_runtime_path")
-    add_prop("waydroid.wayland_display", "wayland_display")
-    add_prop("waydroid.background_start", "background_start")
+    add_prop("openfde.host.user", "user_name")
+    add_prop("openfde.host.uid", "user_id")
+    add_prop("openfde.host.gid", "group_id")
+    add_prop("openfde.host_data_path", "waydroid_data")
+    add_prop("openfde.xdg_runtime_dir", "xdg_runtime_dir")
+    add_prop("openfde.pulse_runtime_path", "pulse_runtime_path")
+    add_prop("openfde.wayland_display", "wayland_display")
+    add_prop("openfde.background_start", "background_start")
     if which("waydroid-sensord") is None:
-        props.append("waydroid.stub_sensors_hal=1")
+        props.append("openfde.stub_sensors_hal=1")
     dpi = cfg["lcd_density"]
     if dpi != "0":
         props.append("ro.sf.lcd_density=" + dpi)
@@ -186,7 +186,7 @@ def mount_rootfs(args, images_dir, session):
 
     make_prop(args, session, args.work + "/waydroid.prop")
     helpers.mount.bind_file(args, args.work + "/waydroid.prop",
-                            tools.config.defaults["rootfs"] + "/vendor/waydroid.prop")
+                            tools.config.defaults["rootfs"] + "/vendor/openfde.prop")
 
 def umount_rootfs(args):
     helpers.mount.umount_all(args, tools.config.defaults["rootfs"])

@@ -7,7 +7,8 @@ lxc.no_new_privs = 0
 
 lxc.init.cmd = /init
 
-lxc.net.0.type = none
+#lxc.net.0.type = none
+lxc.net.0.type = veth
 lxc.net.0.flags = up
 lxc.net.0.link = waydroid0
 lxc.net.0.name = eth0
