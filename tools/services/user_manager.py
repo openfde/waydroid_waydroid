@@ -67,7 +67,7 @@ def start(args, session, unlocked_cb=None):
 
     def userUnlocked(uid):
         logging.info("Android with user {} is ready".format(uid))
-        url = "http://127.0.0.1:18080/api/v1/fs_fusing"  # Replace with the desired URL
+        url = "http://127.0.0.1:18080/api/v1/user_manager/unlock"  
 
         try:
             response = requests.post(url)

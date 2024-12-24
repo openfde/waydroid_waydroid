@@ -75,7 +75,8 @@ def launch(args):
     def justLaunch():
         platformService = IPlatform.get_service(args)
         if platformService:
-            platformService.setprop("waydroid.active_apps", args.PACKAGE)
+            #openfde only use single window, no need to update waydroid.active_apps 
+            #platformService.setprop("waydroid.active_apps", args.PACKAGE)
             ret = platformService.launchApp(args.PACKAGE)
             multiwin = platformService.getprop(
                 "persist.waydroid.multi_windows", "false")
