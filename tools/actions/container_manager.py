@@ -161,6 +161,8 @@ def do_start(args, session):
     # Set permissions
     set_permissions(args)
 
+    set_permissions(args, [session["pulse_cookie_path"]], "666")
+
     # Create session-specific LXC config file
     helpers.lxc.generate_session_lxc_config(args, session)
     # Backwards compatibility
