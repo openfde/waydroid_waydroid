@@ -29,13 +29,13 @@ config_keys = ["arch",
 # overridden on the commandline)
 defaults = {
     "arch": "arm64",
-    "work": "/var/lib/waydroid",
+    "work": "/opt/openfde/var/lib/waydroid",
     "vendor_type": "MAINLINE",
     "system_datetime": "0",
     "vendor_datetime": "0",
     "preinstalled_images_paths": [
         "/etc/waydroid-extra/images",
-        "/usr/share/waydroid-extra/images",
+        "/opt/openfde/usr/share/waydroid-extra/images",
     ],
     "suspend_action": "freeze",
     "mount_overlays": "True",
@@ -71,7 +71,7 @@ if session_defaults["pulse_runtime_path"] == "None":
     session_defaults["pulse_runtime_path"] = session_defaults["xdg_runtime_dir"] + "/pulse"
 
 channels_defaults = {
-    "config_path": "/usr/share/waydroid-extra/channels.cfg",
+    "config_path": "/opt/openfde/usr/share/waydroid-extra/channels.cfg",
     "system_channel": "https://ota.waydro.id/system",
     "vendor_channel": "https://ota.waydro.id/vendor",
     "rom_type": "lineage",

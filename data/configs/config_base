@@ -1,6 +1,6 @@
 # Waydroid LXC Config
 
-lxc.rootfs.path = /var/lib/waydroid/rootfs
+lxc.rootfs.path = /opt/openfde/var/lib/waydroid/rootfs
 lxc.arch = LXCARCH
 lxc.autodev = 0
 # lxc.autodev.tmpfs.size = 25000000
@@ -12,8 +12,8 @@ lxc.mount.auto = cgroup:ro sys:ro proc
 
 lxc.console.path = none
 
-lxc.include = /var/lib/waydroid/lxc/waydroid/config_nodes
-lxc.include = /var/lib/waydroid/lxc/waydroid/config_session
+lxc.include = /opt/openfde/var/lib/waydroid/lxc/waydroid/config_nodes
+lxc.include = /opt/openfde/var/lib/waydroid/lxc/waydroid/config_session
 lxc.mount.entry = /dev/video2 dev/video2 none bind,create=file,optional 0 0
 lxc.mount.entry = /dev/video1 dev/video1 none bind,create=file,optional 0 0
 lxc.mount.entry = /dev/video0 dev/video0 none bind,create=file,optional 0 0

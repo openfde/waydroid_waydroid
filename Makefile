@@ -1,4 +1,5 @@
-PREFIX := /usr
+PREFIX := /opt/openfde/usr
+SYSPREFIX := /usr
 
 USE_SYSTEMD ?= 1
 USE_DBUS_ACTIVATION ?= 1
@@ -6,10 +7,10 @@ USE_NFTABLES ?= 0
 
 WAYDROID_DIR := $(PREFIX)/lib/waydroid
 BIN_DIR := $(PREFIX)/bin
-APPS_DIR := $(PREFIX)/share/applications
+APPS_DIR := $(SYSPREFIX)/share/applications
 METAINFO_DIR := $(PREFIX)/share/metainfo
-ICONS_DIR := $(PREFIX)/share/icons
-SYSD_DIR := $(PREFIX)/lib/systemd/system
+ICONS_DIR := $(SYSPREFIX)/share/icons
+SYSD_DIR := $(SYSPREFIX)/lib/systemd/system
 DBUS_DIR := $(PREFIX)/share/dbus-1
 POLKIT_DIR := $(PREFIX)/share/polkit-1
 APPARMOR_DIR := /etc/apparmor.d
