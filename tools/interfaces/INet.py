@@ -5,7 +5,7 @@ from gi.repository import GLib
 
 
 INTERFACE = "android.openfde.INet"
-SERVICE_NAME = "fdenet"
+SERVICE_NAME = "openfdenet"
 
 TRANSACTION_setStaticIp = 1
 TRANSACTION_setDHCP = 2
