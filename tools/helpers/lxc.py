@@ -275,8 +275,12 @@ def make_base_props(args):
                 gralloc = "ranchu"
                 egl = "emulation"
             else :
-                gralloc = "gbm"
-                egl = "mesa"
+                if vulkan == "":
+                    gralloc = "default"
+                    egl = "swiftshader"
+                else:
+                    gralloc = "gbm"
+                    egl = "mesa"
         else:
             gralloc = "default"
             egl = "swiftshader"
