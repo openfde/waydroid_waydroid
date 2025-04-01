@@ -27,12 +27,15 @@ TRANSACTION_getLans = 17
 TRANSACTION_getLansAndWlans = 18
 TRANSACTION_getLanAndWlanIpConfigurations = 19
 TRANSACTION_ipConfiged = 20
+TRANSACTION_getLansWlansBridges = 21
+TRANSACTION_getLanWlanBridgeIpConfigurations = 22
 
 
 def add_service(args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedWifi, 
     connectActivedWifi, enableWifi, connectedWifiList, isWifiEnable, getSignalAndSecurity, 
     connectHidedWifi, forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure, 
-    getDns, getLans, getLansAndWlans, getLanAndWlanIpConfigurations, ipConfiged):
+    getDns, getLans, getLansAndWlans, getLanAndWlanIpConfigurations, ipConfiged, getLansWlansBridges,
+    getLanWlanBridgeIpConfigurations):
     helpers.drivers.loadBinderNodes(args)
     try:
         serviceManager = gbinder.ServiceManager("/dev/" + args.BINDER_DRIVER, args.SERVICE_MANAGER_PROTOCOL, args.BINDER_PROTOCOL)
@@ -144,6 +147,14 @@ def add_service(args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedW
             ret = ipConfiged(arg1)
             local_response.append_int32(0)
             local_response.append_int32(ret)
+        elif code == TRANSACTION_getLansWlansBridges:
+            ret = getLansWlansBridges()
+            local_response.append_int32(0)
+            local_response.append_string16(ret)
+        elif code == TRANSACTION_getLanWlanBridgeIpConfigurations:
+            ret = getLanWlanBridgeIpConfigurations()
+            local_response.append_int32(0)
+            local_response.append_string16(ret)
         else:
             logging.error("unknown code: {}".format(code))
             local_response.append_int32(0)

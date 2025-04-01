@@ -388,13 +388,51 @@ def start(args):
         else :
             logging.debug("ipConfiged: error")
             return 0
+    def getLansWlansBridges():
+        wlansEthernets = getLansAndWlans()
+        if wlansEthernets == "":
+            return ""
+        bridges = run_nmcli_command("nmcli -g device,type device status |grep ':bridge'|awk -F: '{print$1}'")
+        if bridges == "success":
+            logging.verbose("getBridges: null")
+            return wlansEthernets
+        elif bridges:
+            logging.verbose("getBridges: " + bridges)
+            wlansEthernetsBridges = wlansEthernets
+            for bridge in bridges.split('\n'):
+                bridgeHwaddr = run_nmcli_command("nmcli -g general.hwaddr device show " + bridge)
+                for wlanEthernet in wlansEthernets.split('\n'):
+                    wlanEthernetHwaddr = run_nmcli_command("nmcli -g general.hwaddr device show " + wlanEthernet)
+                    if bridgeHwaddr == wlanEthernetHwaddr:
+                        wlansEthernetsBridges = wlansEthernetsBridges + "\n" + bridge
+            logging.verbose("wlansEthernetsBridges: " + wlansEthernetsBridges)
+            return wlansEthernetsBridges
+        else :
+            logging.debug("getBridges fail")
+            return wlansEthernets
+
+    def getLanWlanBridgeIpConfigurations():
+        ret = ''
+        lansWlansBridges = getLansWlansBridges()
+        if lansWlansBridges == '':
+            return ret
+        for dev in lansWlansBridges.split('\n'):
+            ipConfiguration = run_nmcli_command("nmcli -g IP4.ADDRESS,IP4.GATEWAY,IP4.DNS device show " + dev)
+            if ipConfiguration == "success" or ipConfiguration == "":
+                logging.verbose("ipConf: null")
+            elif ipConfiguration:
+                ret = ret + dev + "#" + ipConfiguration.replace('\n', '#')
+            else :
+                logging.debug("ipConf: error")
+        return ret
     def service_thread():
         while not stopping:
             INet.add_service(
                 args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedWifi, connectActivedWifi, 
                 enableWifi, connectedWifiList, isWifiEnable, getSignalAndSecurity, connectHidedWifi, 
                 forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure, getDns, getLans, 
-                getLansAndWlans, getLanAndWlanIpConfigurations, ipConfiged)
+                getLansAndWlans, getLanAndWlanIpConfigurations, ipConfiged, getLansWlansBridges,
+                getLanWlanBridgeIpConfigurations)
 
     global stopping
     stopping = False
