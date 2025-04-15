@@ -334,12 +334,10 @@ fde_stop() {
 case "$1" in
     start)
         fde_start
-	#start
     ;;
 
     stop)
         fde_stop
-	#stop
     ;;
 
     restart|reload|force-reload)

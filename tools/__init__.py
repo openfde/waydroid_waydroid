@@ -94,6 +94,8 @@ def main():
             else:
                 logging.info(
                     "Run waydroid {} -h for usage information.".format(args.action))
+        elif args.action == "notify":
+                actions.notification.notify(args)
         elif args.action == "app":
             if args.subaction == "install":
                 actions.app_manager.install(args)

@@ -71,6 +71,11 @@ def arguments_container(subparser):
     sub.add_parser("unfreeze", help="unfreeze container")
     return ret
 
+def arguments_notify(subparser):
+    ret = subparser.add_parser("notify", help="notify desktop updated")
+    ret.add_argument("PATH", help="just for updating configs")
+    return ret
+
 def arguments_app(subparser):
     ret = subparser.add_parser("app", help="applications controller")
     sub = ret.add_subparsers(title="subaction", dest="subaction")
@@ -155,6 +160,7 @@ def arguments():
     arguments_session(sub)
     arguments_container(sub)
     arguments_app(sub)
+    arguments_notify(sub)
     arguments_prop(sub)
     arguments_fullUI(sub)
     arguments_firstLaunch(sub)
