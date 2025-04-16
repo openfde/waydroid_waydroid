@@ -144,6 +144,19 @@ def get_apparmor_status(args):
         enabled = False
     return enabled
 
+def is_ubuntu():
+    try:
+        with open('/etc/os-release','r') as f:
+            os_info = f.read()
+        return 'ubuntu' in os_info.lower()
+    except FileNotFounError:
+        try:
+            with open('/etc/lsb-release','r') as f:
+                os_info = f.read()
+            return 'ubuntu' in os_info.lower()
+        except FileNotFounError:
+            return False
+
 def set_lxc_config(args):
     lxc_path = tools.config.defaults["lxc"] + "/waydroid"
     lxc_ver = get_lxc_version(args)
@@ -168,6 +181,13 @@ def set_lxc_config(args):
     tools.helpers.run.user(args, command)
     command = ["sed", "-i", "s/LXCARCH/{}/".format(platform.machine()), lxc_path + "/config"]
     tools.helpers.run.user(args, command)
+
+    if is_ubuntu():
+        command = ["sed", "-i", "s/proc/proc:rw/".format(platform.machine()), lxc_path + "/config"]
+        tools.helpers.run.user(args, command)
+        command = ["sed", "-i", "s/cgroup:ro/cgroup:rw/".format(platform.machine()), lxc_path + "/config"]
+        tools.helpers.run.user(args, command)
+
     command = ["cp", "-fpr", seccomp_profile, lxc_path + "/waydroid.seccomp"]
     tools.helpers.run.user(args, command)
     if get_apparmor_status(args):
