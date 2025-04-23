@@ -420,7 +420,7 @@ def start(args):
             if ipConfiguration == "success" or ipConfiguration == "":
                 logging.verbose("ipConf: null")
             elif ipConfiguration:
-                ret = ret + dev + "#" + ipConfiguration.replace('\n', '#')
+                ret = ret + ("" if ret == "" else ";") + dev + "#" + ipConfiguration.replace('\n', '#')
             else :
                 logging.debug("ipConf: error")
         return ret
