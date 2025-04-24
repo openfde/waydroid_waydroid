@@ -75,8 +75,8 @@ def launch(args):
     def justLaunch():
         platformService = IPlatform.get_service(args)
         if platformService:
-            #openfde only use single window, no need to update waydroid.active_apps
-            #platformService.setprop("waydroid.active_apps", args.PACKAGE)
+            #openfde only use single window, no need to update openfde.active_apps
+            #platformService.setprop("openfde.active_apps", args.PACKAGE)
             ret = platformService.launchApp(args.PACKAGE)
             multiwin = platformService.getprop(
                 "persist.waydroid.multi_windows", "false")
@@ -120,7 +120,7 @@ def showFullUI(args):
     def justShow():
         platformService = IPlatform.get_service(args)
         if platformService:
-            platformService.setprop("waydroid.active_apps", "Openfde")
+            platformService.setprop("openfde.active_apps", "Openfde")
             platformService.settingsPutString(2, "policy_control", "null*")
             # HACK: Refresh display contents
             statusBarService = IStatusBarService.get_service(args)
@@ -140,7 +140,7 @@ def intent(args):
             if ret == "":
                 return
             pkg = ret if ret != "android" else "Openfde"
-            platformService.setprop("waydroid.active_apps", pkg)
+            platformService.setprop("openfde.active_apps", pkg)
             multiwin = platformService.getprop(
                 "persist.waydroid.multi_windows", "false")
             if multiwin == "false":
