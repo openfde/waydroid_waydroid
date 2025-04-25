@@ -148,13 +148,19 @@ def is_ubuntu():
     try:
         with open('/etc/os-release','r') as f:
             os_info = f.read()
-        return 'ubuntu' in os_info.lower()
-    except FileNotFounError:
+        for line in os_info.splitlines():
+            if line.startswith("ID="):
+                return line.split("=")[1].strip().lower() == "ubuntu"
+        return False
+    except FileNotFoundError:
         try:
             with open('/etc/lsb-release','r') as f:
                 os_info = f.read()
-            return 'ubuntu' in os_info.lower()
-        except FileNotFounError:
+            for line in os_info.splitlines():
+                if line.startswith("DISTRIB_ID="):
+                    return line.split("=")[1].strip().lower() == "ubuntu"
+                return False
+        except FileNotFoundError:
             return False
 
 def set_lxc_config(args):
