@@ -29,6 +29,7 @@ def getVulkanDriver(args, dev):
         "msm": "freedreno",
         "vc4": "broadcom",
         "pvrsrvkm": "powervr",
+        "ftg340": "LEOPARD",
         "jmgpu" :"ranchu"
     }
     kernel_driver = getKernelDriver(args, dev)
