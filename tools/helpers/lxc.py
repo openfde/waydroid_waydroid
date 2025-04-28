@@ -314,6 +314,8 @@ def make_base_props(args):
             egl = "swiftshader"
         #props.append("debug.stagefright.ccodec=0")
     props.append("ro.hardware.gralloc=" + gralloc)
+    if gralloc == "ft2004":
+        props.append("fde.systemui.blurlevel=1")
 
     if egl != "":
         props.append("ro.hardware.egl=" + egl)
