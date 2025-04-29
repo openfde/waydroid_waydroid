@@ -144,13 +144,14 @@ def get_apparmor_status(args):
         enabled = False
     return enabled
 
-def is_ubuntu():
+
+def is_target_os(target):
     try:
         with open('/etc/os-release','r') as f:
             os_info = f.read()
         for line in os_info.splitlines():
             if line.startswith("ID="):
-                return line.split("=")[1].strip().lower() == "ubuntu"
+                return line.split("=")[1].strip().lower() == target
         return False
     except FileNotFoundError:
         try:
@@ -158,7 +159,7 @@ def is_ubuntu():
                 os_info = f.read()
             for line in os_info.splitlines():
                 if line.startswith("DISTRIB_ID="):
-                    return line.split("=")[1].strip().lower() == "ubuntu"
+                    return line.split("=")[1].strip().lower() == target
                 return False
         except FileNotFoundError:
             return False
@@ -188,7 +189,7 @@ def set_lxc_config(args):
     command = ["sed", "-i", "s/LXCARCH/{}/".format(platform.machine()), lxc_path + "/config"]
     tools.helpers.run.user(args, command)
 
-    if is_ubuntu():
+    if is_target_os("ubuntu") or is_target_os("deepin"):
         command = ["sed", "-i", "s/proc/proc:rw/".format(platform.machine()), lxc_path + "/config"]
         tools.helpers.run.user(args, command)
         command = ["sed", "-i", "s/cgroup:ro/cgroup:rw/".format(platform.machine()), lxc_path + "/config"]
