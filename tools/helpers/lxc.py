@@ -189,7 +189,7 @@ def set_lxc_config(args):
     command = ["sed", "-i", "s/LXCARCH/{}/".format(platform.machine()), lxc_path + "/config"]
     tools.helpers.run.user(args, command)
 
-    if is_target_os("ubuntu") or is_target_os("deepin"):
+    if is_target_os("ubuntu") or is_target_os("deepin") or is_target_os("debian"):
         command = ["sed", "-i", "s/proc/proc:rw/".format(platform.machine()), lxc_path + "/config"]
         tools.helpers.run.user(args, command)
         command = ["sed", "-i", "s/cgroup:ro/cgroup:rw/".format(platform.machine()), lxc_path + "/config"]
