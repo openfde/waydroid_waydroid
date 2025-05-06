@@ -306,13 +306,13 @@ def make_base_props(args):
             else :
                 if vulkan == "":
                     gralloc = "default"
-                    egl = "swiftshader"
+                    egl = "angle"
                 else:
                     gralloc = "gbm"
                     egl = "mesa"
         else:
             gralloc = "default"
-            egl = "swiftshader"
+            egl = "angle"
         #props.append("debug.stagefright.ccodec=0")
     props.append("ro.hardware.gralloc=" + gralloc)
     if gralloc == "ft2004":
