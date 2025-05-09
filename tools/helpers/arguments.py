@@ -73,7 +73,11 @@ def arguments_container(subparser):
 
 def arguments_notify(subparser):
     ret = subparser.add_parser("notify", help="notify desktop updated")
-    ret.add_argument("PATH", help="just for updating configs")
+    sub = ret.add_subparsers(title="subaction", dest="subaction")
+    application = sub.add_parser("application", help="application changes notify"
+    ret.add_argument("PATH", help="path for updating configs")
+    application = sub.add_parser("desktop", help="shortcut on desktop changes notify"
+    ret.add_argument("PATH", help="path for updating configs")
     return ret
 
 def arguments_app(subparser):

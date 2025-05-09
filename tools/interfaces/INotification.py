@@ -15,9 +15,9 @@ class INotification:
     def __init__(self, remote):
         self.client = gbinder.Client(remote, INTERFACE)
 
-    def desktop_notify(self, arg1):
+    def notify(self, arg1, packageName):
         request = self.client.new_request()
-        request.append_string16("com.android.documentsui")
+        request.append_string16(packageName)
         request.append_string16(arg1)
         reply, status = self.client.transact_sync_reply(
             TRANSACTION_desktopfile_updated, request)
@@ -25,6 +25,12 @@ class INotification:
         if status:
             logging.error("Sending reply failed")
         return None
+
+    def application_notify(self, arg1):
+        notify(self,arg1,"com.boringdroid.systemui")
+
+    def desktop_notify(self, arg1):
+        notify(self,arg1,"com.android.documentsui")
 
 
 def get_service(args):
