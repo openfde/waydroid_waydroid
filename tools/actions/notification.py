@@ -10,14 +10,14 @@ import tools.helpers.ipc
 from tools.interfaces import INotification
 import dbus
 
-def notify(args):
+def notify(args,tp):
     try:
         notificationService = INotification.get_service(args)
         if notificationService:
             logging.info(args.PATH)
-            if args.subaction == "desktop":
+            if tp == "desktop":
                 notificationService.desktop_notify(args.PATH)
-            elif args.subaction == "application":
+            elif tp == "application":
                 notificationService.application_notify(args.PATH)
         else:
             logging.error("Failed to access INotification service")
