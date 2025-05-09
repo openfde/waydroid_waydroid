@@ -15,7 +15,10 @@ def notify(args):
         notificationService = INotification.get_service(args)
         if notificationService:
             logging.info(args.PATH)
-            notificationService.desktop_notify(args.PATH)
+            if args.subaction == "desktop":
+                notificationService.desktop_notify(args.PATH)
+            elif args.subaction == "application":
+                notificationService.application_notify(args.PATH)
         else:
             logging.error("Failed to access INotification service")
             cm.Freeze()
