@@ -219,39 +219,36 @@ def start(args):
             return ""
     def getIpConfigure(interfaceName):
         activedConf = run_nmcli_command("nmcli -g type,device,name connection show --active|grep '802-3-ethernet:" + interfaceName + ":'|awk -F: '{print$3}'")
+        linkStr = "link"
+        unlinkStr = "unlink"
         if activedConf == "success":
             logging.debug("getOneActivedEthernet null")
             allConf = run_nmcli_command("nmcli -g type,name connection show|grep '802-3-ethernet:'|awk -F: '{print $2}'")
             if allConf == "success":
                 logging.debug("Configure null")
-                return ""
+                return unlinkStr
             elif allConf:
                 logging.verbose("allConf: " + allConf)
-                allConfList = allConf.split('\n')
-                confCounts = len(allConfList)
-                i = 0
                 allConfForInterfaceList = []
-                while i < confCounts:
-                    if interfaceName == run_nmcli_command("nmcli -g connection.interface-name connection show '" + allConfList[i] + "'"):
-                        allConfForInterfaceList.append(allConfList[i])
-                    i += 1
-                confForInterfaceCounts = len(allConfForInterfaceList)
-                j = 0
+                for conf in allConf.split('\n'):
+                    if interfaceName == run_nmcli_command("nmcli -g connection.interface-name connection show '" + conf + "'"):
+                        allConfForInterfaceList.append(conf)
+                if not allConfForInterfaceList:
+                    return unlinkStr
                 latestTimestamp = 0
                 index = -1
-                while j < confForInterfaceCounts:
-                    timestamp = run_nmcli_command("nmcli -g connection.timestamp connection show '" + allConfForInterfaceList[j] + "'")
+                for i, conf in enumerate(allConfForInterfaceList):
+                    timestamp = run_nmcli_command("nmcli -g connection.timestamp connection show '" + conf + "'")
                     if latestTimestamp < int(timestamp):
                         latestTimestamp = int(timestamp)
-                        index = j
-                    j += 1
+                        index = i
                 if index == -1:
                     logging.debug("get ipConfigure null ")
-                    return ""
+                    return unlinkStr
                 ipConfigure = run_nmcli_command("nmcli -g ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns connection show '" + allConfForInterfaceList[index] + "'")
                 if ipConfigure:
                     logging.verbose("get ipConfigure: " + ipConfigure)
-                    return ipConfigure
+                    return unlinkStr + '\n' + ipConfigure.replace(',', ' | ')
                 else :
                     logging.debug("get ipConfigure fail ")
                     return ""
@@ -260,7 +257,8 @@ def start(args):
                 return ""
         elif activedConf:
             logging.verbose("getOneActivedEthernetIpConfigure: " + activedConf)
-            return run_nmcli_command("nmcli -g ipv4.method,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS connection show '" + activedConf + "'")
+            ipConfigure = run_nmcli_command("nmcli -g ipv4.method,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS connection show '" + activedConf + "'")
+            return linkStr + '\n' + ipConfigure
         else :
             logging.debug("getOneActivedEthernet fail")
             return ""
@@ -424,6 +422,40 @@ def start(args):
             else :
                 logging.debug("ipConf: error")
         return ret
+    def getAllSsidInfo():
+        logging.verbose("getAllSsidInfo")
+        allSsidInfo = run_nmcli_command("nmcli -t -f ssid,signal,security,in-use dev wifi")
+        logging.verbose(allSsidInfo)
+        if allSsidInfo == "success":
+            logging.verbose("none any Ssid")
+            return ""
+        elif allSsidInfo:
+            logging.verbose("getAllSsid success")
+            allConnectedSsid = run_nmcli_command("nmcli -g NAME,TYPE connection show|grep '802-11-wireless'|awk -F: '{print $1}'|sort -u")
+            logging.verbose(allConnectedSsid)
+            if allConnectedSsid == "success":
+                logging.verbose("none any ConnectedSsid")
+                return allSsidInfo
+            elif allConnectedSsid:
+                logging.verbose("AllConnectedSsid: \n" + allConnectedSsid)
+                newAllSsidInfo = ''
+                for info in allSsidInfo.split('\n'):
+                    find = False
+                    for ssid in allConnectedSsid.split('\n'):
+                        if info.startswith(ssid + ':'):
+                            find = True
+                            break
+                    info = info.strip()
+                    if find and not info.endswith(":*"):
+                        info = info + "**"
+                    newAllSsidInfo = newAllSsidInfo + (info if newAllSsidInfo == '' else '\n' + info)
+                return newAllSsidInfo
+            else:
+                logging.debug("getAllConnectedSsid fail")
+                return ""
+        else:
+            logging.debug("getAllSsid fail")
+            return ""
     def service_thread():
         while not stopping:
             INet.add_service(
@@ -431,7 +463,7 @@ def start(args):
                 enableWifi, connectedWifiList, isWifiEnable, getSignalAndSecurity, connectHidedWifi, 
                 forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure, getDns, getLans, 
                 getLansAndWlans, getLanAndWlanIpConfigurations, ipConfiged, getLansWlansBridges,
-                getLanWlanBridgeIpConfigurations)
+                getLanWlanBridgeIpConfigurations, getAllSsidInfo)
 
     global stopping
     stopping = False

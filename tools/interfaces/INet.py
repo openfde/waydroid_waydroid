@@ -29,13 +29,14 @@ TRANSACTION_getLanAndWlanIpConfigurations = 19
 TRANSACTION_ipConfiged = 20
 TRANSACTION_getLansWlansBridges = 21
 TRANSACTION_getLanWlanBridgeIpConfigurations = 22
+TRANSACTION_getAllSsidInfo = 23
 
 
 def add_service(args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedWifi, 
     connectActivedWifi, enableWifi, connectedWifiList, isWifiEnable, getSignalAndSecurity, 
     connectHidedWifi, forgetWifi, getStaticIpConf, getActivedInterface, getIpConfigure, 
     getDns, getLans, getLansAndWlans, getLanAndWlanIpConfigurations, ipConfiged, getLansWlansBridges,
-    getLanWlanBridgeIpConfigurations):
+    getLanWlanBridgeIpConfigurations, getAllSsidInfo):
     helpers.drivers.loadBinderNodes(args)
     try:
         serviceManager = gbinder.ServiceManager("/dev/" + args.BINDER_DRIVER, args.SERVICE_MANAGER_PROTOCOL, args.BINDER_PROTOCOL)
@@ -153,6 +154,10 @@ def add_service(args, setStaticIp, setDHCP, getAllSsid, connectSsid, getActivedW
             local_response.append_string16(ret)
         elif code == TRANSACTION_getLanWlanBridgeIpConfigurations:
             ret = getLanWlanBridgeIpConfigurations()
+            local_response.append_int32(0)
+            local_response.append_string16(ret)
+        elif code == TRANSACTION_getAllSsidInfo:
+            ret = getAllSsidInfo()
             local_response.append_int32(0)
             local_response.append_string16(ret)
         else:
