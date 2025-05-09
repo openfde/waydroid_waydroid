@@ -315,7 +315,7 @@ def make_base_props(args):
             egl = "angle"
         #props.append("debug.stagefright.ccodec=0")
     props.append("ro.hardware.gralloc=" + gralloc)
-    if gralloc == "ft2004":
+    if gralloc == "ft2004" or vulkan == "virtio" or gralloc == "default" :
         props.append("fde.systemui.blurlevel=1")
 
     if egl != "":
