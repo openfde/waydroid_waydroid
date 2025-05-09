@@ -28,6 +28,8 @@ def getVulkanDriver(args, dev):
         "panfrost": "panfrost",
         "msm": "freedreno",
         "vc4": "broadcom",
+        "v3d": "broadcom",
+        "virtio-pci": "virtio",
         "pvrsrvkm": "powervr",
         "ftg340": "LEOPARD",
         "jmgpu" :"ranchu"
