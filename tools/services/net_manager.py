@@ -14,6 +14,7 @@ import tools.actions.session_manager
 import tools.config
 import tools.helpers.run
 import time
+import json
 
 import subprocess
 
@@ -219,14 +220,15 @@ def start(args):
             return ""
     def getIpConfigure(interfaceName):
         activedConf = run_nmcli_command("nmcli -g type,device,name connection show --active|grep '802-3-ethernet:" + interfaceName + ":'|awk -F: '{print$3}'")
-        linkStr = "link"
-        unlinkStr = "unlink"
+        error = '{"code": -1}'
+        noIpUnlink = '{"code": 0,"status": "unlink"}'
+        noIpLink = '{"code": 0,"status": "link"}'
         if activedConf == "success":
             logging.debug("getOneActivedEthernet null")
             allConf = run_nmcli_command("nmcli -g type,name connection show|grep '802-3-ethernet:'|awk -F: '{print $2}'")
             if allConf == "success":
                 logging.debug("Configure null")
-                return unlinkStr
+                return noIpUnlink
             elif allConf:
                 logging.verbose("allConf: " + allConf)
                 allConfForInterfaceList = []
@@ -234,7 +236,7 @@ def start(args):
                     if interfaceName == run_nmcli_command("nmcli -g connection.interface-name connection show '" + conf + "'"):
                         allConfForInterfaceList.append(conf)
                 if not allConfForInterfaceList:
-                    return unlinkStr
+                    return noIpUnlink
                 latestTimestamp = 0
                 index = -1
                 for i, conf in enumerate(allConfForInterfaceList):
@@ -244,24 +246,42 @@ def start(args):
                         index = i
                 if index == -1:
                     logging.debug("get ipConfigure null ")
-                    return unlinkStr
-                ipConfigure = run_nmcli_command("nmcli -g ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns connection show '" + allConfForInterfaceList[index] + "'")
-                if ipConfigure:
-                    logging.verbose("get ipConfigure: " + ipConfigure)
-                    return unlinkStr + '\n' + ipConfigure.replace(',', ' | ')
+                    return noIpUnlink
+                method = run_nmcli_command("nmcli -g ipv4.method connection show '" + allConfForInterfaceList[index] + "'")
+                if method == "auto":
+                    return '{"code": 1,"status": "unlink","method": "auto"}'
+                elif method == "manual":
+                    address = run_nmcli_command("nmcli -g ipv4.addresses connection show '" + allConfForInterfaceList[index] + "'")
+                    gateway = run_nmcli_command("nmcli -g ipv4.gateway connection show '" + allConfForInterfaceList[index] + "'")
+                    dns = run_nmcli_command("nmcli -g ipv4.dns connection show '" + allConfForInterfaceList[index] + "'")
+                    return '{"code": 1,"status": "unlink","method": "manual"' \
+                            + ',"address": ' + '"' + (address if address and address != "success" else '') + '"' \
+                            + ',"gateway": ' + '"' + (gateway if gateway and gateway != "success" else '') + '"' \
+                            + ',"dns": ' + '"' + (dns.replace(',', ' | ') if dns and dns != "success" else '') + '"' \
+                            + '}'
                 else :
-                    logging.debug("get ipConfigure fail ")
-                    return ""
+                    logging.debug("get method fail ")
+                    return noIpUnlink
             else :
                 logging.debug("allConf: fail")
-                return ""
+                return noIpUnlink
         elif activedConf:
             logging.verbose("getOneActivedEthernetIpConfigure: " + activedConf)
             ipConfigure = run_nmcli_command("nmcli -g ipv4.method,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS connection show '" + activedConf + "'")
-            return linkStr + '\n' + ipConfigure
+            if ipConfigure and ipConfigure != "success":
+                keys = ["code", "status", "method", "address", "gateway", "dns"]
+                values = [1, "link"] + ipConfigure.split('\n')
+                resultDict = {key: value for key, value in zip(keys, values)}
+                logging.verbose(resultDict)
+                jsonStr = json.dumps(resultDict)
+                logging.verbose(jsonStr)
+                return jsonStr
+            else :
+                logging.debug("getUsingIpConfigure: fail")
+                return noIpLink
         else :
             logging.debug("getOneActivedEthernet fail")
-            return ""
+            return error
     def getDns(interfaceName):
         conProfile = run_nmcli_command("nmcli -g device,name connection show --active |grep '" + interfaceName + ":'|awk -F: '{print$2}'")
         logging.verbose(conProfile)
