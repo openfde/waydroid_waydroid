@@ -274,6 +274,9 @@ def make_base_props(args):
             elif vulkan == "ranchu":
                 gralloc = "ranchu"
                 egl = "emulation"
+            elif vulkan == "LEOPARD":
+                gralloc = "LEOPARD"
+                egl = "LEOPARD"
             else :
                 if vulkan == "":
                     gralloc = "default"
