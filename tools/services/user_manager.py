@@ -98,9 +98,13 @@ def start(args, session, unlocked_cb=None):
 
     def packageStateChanged(mode, packageName, uid):
         logging.debug("packageStateChanged")
-        """
+
         platformService = IPlatform.get_service(args)
         if platformService:
+            multiwin = platformService.getprop(
+                "persist.waydroid.multi_windows", "false")
+            if multiwin == "false":
+                return
             appInfo = platformService.getAppInfo(packageName)
             desktop_file_path = apps_dir + "/waydroid." + packageName + ".desktop"
             if mode == 0:
@@ -113,7 +117,6 @@ def start(args, session, unlocked_cb=None):
                 if os.path.isfile(desktop_file_path):
                     if makeDesktopFile(appInfo) == -1:
                         os.remove(desktop_file_path)
-        """
 
     def service_thread():
         while not stopping:
