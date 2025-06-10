@@ -75,17 +75,17 @@ def launch(args):
     def justLaunch():
         platformService = IPlatform.get_service(args)
         if platformService:
-            #openfde only use single window, no need to update waydroid.active_apps 
-            #platformService.setprop("waydroid.active_apps", args.PACKAGE)
-            ret = platformService.launchApp(args.PACKAGE)
             multiwin = platformService.getprop(
                 "persist.waydroid.multi_windows", "false")
             if multiwin == "false":
                 platformService.settingsPutString(
                     2, "policy_control", "immersive.status=*")
             else:
+                #openfde only use single window, no need to update waydroid.active_apps, but only update active_apps in multiwin mode
+                platformService.setprop("waydroid.active_apps", args.PACKAGE)
                 platformService.settingsPutString(
                     2, "policy_control", "immersive.full=*")
+            ret = platformService.launchApp(args.PACKAGE)
         else:
             logging.error("Failed to access IPlatform service")
     maybeLaunchLater(args, justLaunch)
