@@ -293,6 +293,12 @@ def make_base_props(args):
     if egl != "":
         props.append("ro.hardware.egl=" + egl)
 
+    if os.path.isfile("/etc/fde.d/fde.conf"):
+        mode = tools.helpers.props.file_get(args,
+                                        "/etc/fde.d/fde.conf", "mode")
+        if mode == "app_fusing":
+            props.append("persist.waydroid.multi_windows=true")
+
     media_profiles = tools.helpers.props.host_get(args, "media.settings.xml")
     if media_profiles != "":
         media_profiles = media_profiles.replace("vendor/", "vendor_extra/")
