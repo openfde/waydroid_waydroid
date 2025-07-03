@@ -114,9 +114,9 @@ def start(args, session, unlocked_cb=None):
                 if os.path.isfile(desktop_file_path):
                     os.remove(desktop_file_path)
             elif mode == 3:
-                logging.debug("packageStateChanged start app")
+                logging.debug("packageStateChanged start app packageName:"+packageName)
             elif mode == 4:   
-                logging.debug("packageStateChanged stop app")         
+                logging.debug("packageStateChanged stop app packageName:"+packageName)         
             else:
                 if os.path.isfile(desktop_file_path):
                     if makeDesktopFile(appInfo) == -1:

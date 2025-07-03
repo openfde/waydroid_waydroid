@@ -95,7 +95,7 @@ def stop(args):
         platformService = IPlatform.get_service(args)
         if platformService:
             #openfde only use single window, no need to update waydroid.active_apps 
-            ret = platformService.stop(args.PACKAGE)
+            ret = platformService.stopApp(args.PACKAGE)
            
         else:
             logging.error("Failed to access IPlatform service")
