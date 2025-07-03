@@ -205,6 +205,7 @@ class IPlatform:
     def compatbileGet(self, arg1):
         request = self.client.new_request()
         request.append_string16(arg1)
+        request.append_string16(arg2)
         reply, status = self.client.transact_sync_reply(
             TRANSACTION_compatible_get, request)
 
@@ -213,9 +214,13 @@ class IPlatform:
         else:
             reader = reply.init_reader()
             status, exception = reader.read_int32()
-            if exception != 0:
-                logging.error("Failed with code: {}".format(exception))    
+            if exception == 0:
+                rep1 = reader.read_string16()
+                return rep1
+            else:
+                logging.error("Failed with code: {}".format(exception))
 
+        return None 
 
     def compatbileSet(self, arg1):
         request = self.client.new_request()
