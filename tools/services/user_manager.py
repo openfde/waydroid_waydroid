@@ -113,14 +113,22 @@ def start(args, session, unlocked_cb=None):
             elif mode == 1:
                 if os.path.isfile(desktop_file_path):
                     os.remove(desktop_file_path)
+            elif mode == 3:
+                logging.debug("packageStateChanged start app packageName:"+packageName)
+            elif mode == 4:   
+                logging.debug("packageStateChanged stop app packageName:"+packageName)         
             else:
                 if os.path.isfile(desktop_file_path):
                     if makeDesktopFile(appInfo) == -1:
                         os.remove(desktop_file_path)
 
+    def packageStateChangedHasVernsion(mode, packageName,version, uid):
+       logging.debug("packageStateChangedHasVernsion packageName "+packageName + ",version "+version)
+                           
+
     def service_thread():
         while not stopping:
-            IUserMonitor.add_service(args, userUnlocked, packageStateChanged)
+            IUserMonitor.add_service(args, userUnlocked, packageStateChanged,packageStateChangedHasVernsion)
 
     global stopping
     stopping = False

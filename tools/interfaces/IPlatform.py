@@ -22,6 +22,7 @@ TRANSACTION_settingsGetString = 10
 TRANSACTION_settingsPutInt = 11
 TRANSACTION_settingsGetInt = 12
 TRANSACTION_launchIntent = 13
+TRANSACTION_stopApp = 16
 
 class IPlatform:
     def __init__(self, remote):
@@ -184,6 +185,20 @@ class IPlatform:
             status, exception = reader.read_int32()
             if exception != 0:
                 logging.error("Failed with code: {}".format(exception))
+
+    def stopApp(self, arg1):
+        request = self.client.new_request()
+        request.append_string16(arg1)
+        reply, status = self.client.transact_sync_reply(
+            TRANSACTION_stopApp, request)
+
+        if status:
+            logging.error("Sending reply failed")
+        else:
+            reader = reply.init_reader()
+            status, exception = reader.read_int32()
+            if exception != 0:
+                logging.error("Failed with code: {}".format(exception))              
 
     def launchIntent(self, arg1, arg2):
         request = self.client.new_request()
