@@ -107,7 +107,7 @@ def compatbile_get(args):
         if platformService:
             #openfde only use single window, no need to update waydroid.active_apps 
             ret = platformService.compatbileGet(args.PACKAGE,args.KEYCODE)
-           
+            print("\t" + ret)
         else:
             logging.error("Failed to access IPlatform service")
     maybeLaunchLater(args, justLaunch)   
@@ -118,6 +118,7 @@ def compatbile_set(args):
         if platformService:
             #openfde only use single window, no need to update waydroid.active_apps 
             ret = platformService.compatbileSet(args.PACKAGE,args.KEYCODE,args.VALUE)
+            print("\t" + ret)
            
         else:
             logging.error("Failed to access IPlatform service")
