@@ -110,6 +110,14 @@ def main():
             else:
                 logging.info(
                     "Run waydroid {} -h for usage information.".format(args.action))
+        elif args.action == "compatbile-config":
+            if args.subaction == "get":
+                actions.app_manager.compatbile_get(args)
+            elif args.subaction == "set":
+                actions.app_manager.compatbile_set(args)
+            else:
+                logging.info(
+                    "Run waydroid {} -h for usage information.".format(args.action))            
         elif args.action == "prop":
             if args.subaction == "get":
                 actions.prop.get(args)

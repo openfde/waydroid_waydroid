@@ -90,6 +90,17 @@ def arguments_app(subparser):
     sub.add_parser("list", help="list installed applications")
     return ret
 
+def arguments_config(subparser):
+    ret = subparser.add_parser("compatbile-config", help="applications controller")
+    sub = ret.add_subparsers(title="subaction", dest="subaction")
+    get = sub.add_parser("get", help="compatbile-get of application")
+    get.add_argument('PACKAGE', help="package name of app to compatbile-get")  
+    get.add_argument('KEYCODE', help="keycode name of app to compatbile-get")       
+    set = sub.add_parser("set", help="compatbile-get for application")
+    set.add_argument('PACKAGE', help="package name of app to compatbile-get")  
+    set.add_argument('KEYCODE', help="keycode name of app to compatbile-get")  
+    set.add_argument('VALUE', help="value name of app to compatbile-get")
+
 def arguments_prop(subparser):
     ret = subparser.add_parser("prop", help="android properties controller")
     sub = ret.add_subparsers(title="subaction", dest="subaction")
@@ -157,6 +168,7 @@ def arguments():
     arguments_session(sub)
     arguments_container(sub)
     arguments_app(sub)
+    arguments_config(sub)
     arguments_prop(sub)
     arguments_fullUI(sub)
     arguments_firstLaunch(sub)
