@@ -22,7 +22,8 @@ def start(args):
         if cfg["waydroid"]["suspend_action"] == "stop":
             tools.actions.session_manager.stop(args)
         else:
-            tools.actions.container_manager.freeze(args)
+            logging.debug("Suspend action is not set to stop, skipping suspend")
+            #tools.actions.container_manager.freeze(args)
 
     def reboot():
         helpers.lxc.stop(args)

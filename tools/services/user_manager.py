@@ -8,6 +8,7 @@ import tools.config
 import tools.helpers.net
 from tools.interfaces import IUserMonitor
 from tools.interfaces import IPlatform
+import subprocess
 
 stopping = False
 
@@ -111,19 +112,20 @@ def start(args, session, unlocked_cb=None):
                 # Package added
                 makeDesktopFile(appInfo)
             elif mode == 1:
+                subprocess.run(["bash", "fde_utils", "notify", "remove", packageName])
                 if os.path.isfile(desktop_file_path):
                     os.remove(desktop_file_path)
             elif mode == 3:
-                logging.debug("packageStateChanged start app packageName:"+packageName)
+                subprocess.run(["bash", "fde_utils", "notify", "start", packageName])
             elif mode == 4:   
-                logging.debug("packageStateChanged stop app packageName:"+packageName)         
+                subprocess.run(["bash", "fde_utils", "notify", "stop", packageName])
             else:
                 if os.path.isfile(desktop_file_path):
                     if makeDesktopFile(appInfo) == -1:
                         os.remove(desktop_file_path)
 
     def packageStateChangedHasVernsion(mode, packageName,version, uid):
-       logging.debug("packageStateChangedHasVernsion packageName "+packageName + ",version "+version)
+        subprocess.run(["bash", "fde_utils", "notify", "install", packageName, version])
                            
 
     def service_thread():
