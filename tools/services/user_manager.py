@@ -107,35 +107,38 @@ def start(args, session, unlocked_cb=None):
                 "persist.waydroid.multi_windows", "false")
             if multiwin == "false":
                 return
-            appInfo = platformService.getAppInfo(packageName)
-            desktop_file_path = apps_dir + "/waydroid." + packageName + ".desktop"
-            if mode == 0:
-                # Package added
-                makeDesktopFile(appInfo)
-            elif mode == 1:
-                try:
-                    package_info = json.dumps({"packageName": packageName, "opcode":"remove"})
-                    tools.helpers.ipc.DBusSessionService().Upload()
-                except dbus.DBusException:
-                    logging.warning("DBusSessionService not available, skipping upload remove message")
-                if os.path.isfile(desktop_file_path):
-                    os.remove(desktop_file_path)
-            elif mode == 3:
+            if mode == 3:
                 try:
                     package_info = json.dumps({"packageName": packageName, "opcode":"start"})
                     tools.helpers.ipc.DBusSessionService().Upload()
                 except dbus.DBusException:
                     logging.warning("DBusSessionService not available, skipping upload start message")
-            elif mode == 4:   
+            elif mode == 4:
                 try:
                     package_info = json.dumps({"packageName": packageName, "opcode":"stop"})
                     tools.helpers.ipc.DBusSessionService().Upload(package_info)
                 except dbus.DBusException:
                     logging.warning("DBusSessionService not available, skipping upload stop message")
             else:
-                if os.path.isfile(desktop_file_path):
-                    if makeDesktopFile(appInfo) == -1:
+                appInfo = platformService.getAppInfo(packageName)
+                desktop_file_path = apps_dir + "/waydroid." + packageName + ".desktop"
+                if mode == 0:
+                    # Package added
+                    makeDesktopFile(appInfo)
+                elif mode == 1:
+                    try:
+                        package_info = json.dumps({"packageName": packageName, "opcode":"remove"})
+                        tools.helpers.ipc.DBusSessionService().Upload()
+                    except dbus.DBusException:
+                        logging.warning("DBusSessionService not available, skipping upload remove message")
+                    if os.path.isfile(desktop_file_path):
                         os.remove(desktop_file_path)
+                else:
+                    if os.path.isfile(desktop_file_path):
+                        if makeDesktopFile(appInfo) == -1:
+                            os.remove(desktop_file_path)
+
+            
 
     def packageStateChangedHasVernsion(mode, packageName,version, uid):
         package_info = json.dumps({"packageName": packageName, "version": version,"opcode":"install"})
