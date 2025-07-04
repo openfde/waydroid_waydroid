@@ -9,7 +9,7 @@ import tools.helpers.net
 from tools.interfaces import IUserMonitor
 from tools.interfaces import IPlatform
 import json
-import dbus.DBusException
+import dbus
 
 stopping = False
 
@@ -110,7 +110,7 @@ def start(args, session, unlocked_cb=None):
             if mode == 3:
                 try:
                     package_info = json.dumps({"packageName": packageName, "opcode":"start"})
-                    tools.helpers.ipc.DBusSessionService().Upload()
+                    tools.helpers.ipc.DBusSessionService().Upload(package_info)
                 except dbus.DBusException:
                     logging.warning("DBusSessionService not available, skipping upload start message")
             elif mode == 4:
@@ -143,7 +143,7 @@ def start(args, session, unlocked_cb=None):
     def packageStateChangedHasVernsion(mode, packageName,version, uid):
         package_info = json.dumps({"packageName": packageName, "version": version,"opcode":"install"})
         try:
-            tools.helpers.ipc.DBusSessionService().Upload(package_info)
+            threading.Thread(target=lambda: tools.helpers.ipc.DBusSessionService().Upload(package_info)).start()
         except dbus.DBusException:
             logging.warning("DBusSessionService not available, skipping upload install message")
                            
