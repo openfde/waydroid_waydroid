@@ -26,6 +26,13 @@ class DbusSessionManager(dbus.service.Object):
         do_stop(self.args, self.looper)
         stop_container(quit_session=False)
 
+    @dbus.service.method("id.waydro.SessionManager", in_signature='s', out_signature='s')
+    def Upload(self, message):
+        # Broadcast the upload event via D-Bus signal
+        pass
+        return "Upload message received"
+   
+
 def service(args, looper):
     dbus_obj = DbusSessionManager(looper, dbus.SessionBus(), '/SessionManager', args)
     looper.run()
