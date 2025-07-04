@@ -8,7 +8,8 @@ import tools.config
 import tools.helpers.net
 from tools.interfaces import IUserMonitor
 from tools.interfaces import IPlatform
-import subprocess
+import json
+import dbus.DBusException
 
 stopping = False
 
@@ -112,20 +113,36 @@ def start(args, session, unlocked_cb=None):
                 # Package added
                 makeDesktopFile(appInfo)
             elif mode == 1:
-                subprocess.run(["bash", "fde_utils", "notify", "remove", packageName])
+                try:
+                    package_info = json.dumps({"packageName": packageName, "opcode":"remove"})
+                    tools.helpers.ipc.DBusSessionService().Upload()
+                except dbus.DBusException:
+                    logging.warning("DBusSessionService not available, skipping upload remove message")
                 if os.path.isfile(desktop_file_path):
                     os.remove(desktop_file_path)
             elif mode == 3:
-                subprocess.run(["bash", "fde_utils", "notify", "start", packageName])
+                try:
+                    package_info = json.dumps({"packageName": packageName, "opcode":"start"})
+                    tools.helpers.ipc.DBusSessionService().Upload()
+                except dbus.DBusException:
+                    logging.warning("DBusSessionService not available, skipping upload start message")
             elif mode == 4:   
-                subprocess.run(["bash", "fde_utils", "notify", "stop", packageName])
+                try:
+                    package_info = json.dumps({"packageName": packageName, "opcode":"stop"})
+                    tools.helpers.ipc.DBusSessionService().Upload(package_info)
+                except dbus.DBusException:
+                    logging.warning("DBusSessionService not available, skipping upload stop message")
             else:
                 if os.path.isfile(desktop_file_path):
                     if makeDesktopFile(appInfo) == -1:
                         os.remove(desktop_file_path)
 
     def packageStateChangedHasVernsion(mode, packageName,version, uid):
-        subprocess.run(["bash", "fde_utils", "notify", "install", packageName, version])
+        package_info = json.dumps({"packageName": packageName, "version": version,"opcode":"install"})
+        try:
+            tools.helpers.ipc.DBusSessionService().Upload(package_info)
+        except dbus.DBusException:
+            logging.warning("DBusSessionService not available, skipping upload install message")
                            
 
     def service_thread():
