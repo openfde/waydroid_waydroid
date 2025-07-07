@@ -3,13 +3,13 @@
 import logging
 import os
 import threading
+import subprocess
 import requests
 import tools.config
 import tools.helpers.net
 from tools.interfaces import IUserMonitor
 from tools.interfaces import IPlatform
 import json
-import dbus
 
 stopping = False
 
@@ -108,17 +108,13 @@ def start(args, session, unlocked_cb=None):
             if multiwin == "false":
                 return
             if mode == 3:
-                try:
-                    package_info = json.dumps({"packageName": packageName, "opcode":"start"})
-                    tools.helpers.ipc.DBusSessionService().Upload(package_info)
-                except dbus.DBusException:
-                    logging.warning("DBusSessionService not available, skipping upload start message")
+                package_info = json.dumps({"PackageName": packageName, "OpCode":"start"})
+                cmd = ['fde_ctrl', '-msg', package_info]
+                threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
             elif mode == 4:
-                try:
-                    package_info = json.dumps({"packageName": packageName, "opcode":"stop"})
-                    tools.helpers.ipc.DBusSessionService().Upload(package_info)
-                except dbus.DBusException:
-                    logging.warning("DBusSessionService not available, skipping upload stop message")
+                package_info = json.dumps({"PackageName": packageName, "OpCode":"stop"})
+                cmd = ['fde_ctrl', '-msg', package_info]
+                threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
             else:
                 appInfo = platformService.getAppInfo(packageName)
                 desktop_file_path = apps_dir + "/waydroid." + packageName + ".desktop"
@@ -126,11 +122,9 @@ def start(args, session, unlocked_cb=None):
                     # Package added
                     makeDesktopFile(appInfo)
                 elif mode == 1:
-                    try:
-                        package_info = json.dumps({"packageName": packageName, "opcode":"remove"})
-                        tools.helpers.ipc.DBusSessionService().Upload()
-                    except dbus.DBusException:
-                        logging.warning("DBusSessionService not available, skipping upload remove message")
+                    package_info = json.dumps({"PackageName": packageName, "OpCode":"remove"})
+                    cmd = ['fde_ctrl', '-msg', package_info]
+                    threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
                     if os.path.isfile(desktop_file_path):
                         os.remove(desktop_file_path)
                 else:
@@ -141,11 +135,9 @@ def start(args, session, unlocked_cb=None):
             
 
     def packageStateChangedHasVernsion(mode, packageName,version, uid):
-        package_info = json.dumps({"packageName": packageName, "version": version,"opcode":"install"})
-        try:
-            threading.Thread(target=lambda: tools.helpers.ipc.DBusSessionService().Upload(package_info)).start()
-        except dbus.DBusException:
-            logging.warning("DBusSessionService not available, skipping upload install message")
+        package_info = json.dumps({"PackageName": packageName, "Version": version,"OpCode":"install"})
+        cmd = ['fde_ctrl', '-msg', package_info]
+        threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
                            
 
     def service_thread():
