@@ -4,6 +4,7 @@ import threading
 import pwd
 from typing import List
 from tools.interfaces import ITaskManager
+from pathlib import Path
 
 stopping = False
 
@@ -13,94 +14,46 @@ def listTasksPid() -> List[int]:
 
 
 def getTaskInfoByPid(pid):
+    proc_path = Path("/proc") / str(pid)
+    status_path = proc_path / "status"
+    cmdline_path = proc_path / "cmdline"
+
+    if not proc_path.exists():
+        return None
+
     task = {}
-
-    # 进程名称
-    try:
-        with open(f"/proc/{pid}/comm", "r") as f:
-            task["name"] = f.read().strip()
-    except FileNotFoundError:
-        task["name"] = "unknown"
-
-    # 用户
-    try:
-        with open(f"/proc/{pid}/status", "r") as f:
+    cmdline = cmdline_path.read_text().strip().strip("\x00")
+    if cmdline == "":
+        # 内核线程，用户名为root,taskName去status里面找
+        task["user"] = "root"
+        with status_path.open("r") as f:
+            for line in f:
+                if line.startswith("Name:"):
+                    task["name"] = line.split(":")[1].strip().strip("\x00")
+                    break
+            else:
+                task["name"] = "unknown"  # 不可能
+    else:  # 用户线程，用户名要靠Uid获取
+        task["name"] = cmdline
+        with status_path.open("r") as f:
             for line in f:
                 if line.startswith("Uid:"):
-                    uid = int(line.split()[1])
-                    task["user"] = pwd.getpwuid(uid).pw_name
-    except (FileNotFoundError, KeyError):
-        task["user"] = "unknown"
+                    uid_str = line.split(":")[1].strip().strip("\x00")
+                    if uid_str.isdigit():
+                        task["user"] = pwd.getpwuid(int(uid_str)).pw_name
+                    else:
+                        logging.debug(f"uid:{uid_str}")
+                        task["user"] = uid_str.strip().strip("\x00").split()[0]
 
-    # 虚拟内存
-    try:
-        with open(f"/proc/{pid}/status", "r") as f:
-            for line in f:
-                if line.startswith("VmSize:"):
-                    task["vmsize"] = int(line.strip().split()[1])
-    except FileNotFoundError:
-        task["vmsize"] = -1
-
-    # % CPU
-    try:
-        with open(f"/proc/{pid}/stat", "r") as f:
-            stat_line = f.readline()
-        stat_values = stat_line.strip().split()
-        utime = float(stat_values[13])
-        stime = float(stat_values[14])
-        # starttime = float(stat_values[21])
-
-        with open("/proc/stat", "r") as f:
-            cpu_line = f.readline()
-        cpu_values = cpu_line.strip().split()
-        total_time = sum(float(x) for x in cpu_values[1:])
-
-        clk_tck = os.sysconf(os.sysconf_names["SC_CLK_TCK"])
-        seconds = total_time / os.sysconf(clk_tck)
-        task["cpuUsage"] = int((utime + stime) / seconds * 1000)  # /10得到 xx.x%
-    except FileNotFoundError:
-        task["cpuUsage"] = -1
-
-    # 获取内存
-    try:
-        with open(f"/proc/{pid}/status", "r") as f:
-            for line in f:
-                if line.startswith("VmRSS:"):
-                    task["rss"] = int(line.strip().split()[1])
-    except FileNotFoundError:
-        task["rss"] = -1
-
-    # 读盘总量 / 写入总量
-    try:
-        with open(f"/proc/{pid}/io", "r") as f:
-            for line in f:
-                if line.startswith("read_bytes:"):
-                    task["readBytes"] = int(line.strip().split()[1])
-                elif line.startswith("write_bytes:"):
-                    task["writeBytes"] = int(line.strip().split()[1])
-    except FileNotFoundError:
-        task["readBytes"] = -1
-        task["writeBytes"] = -1
-
-    # 磁盘读取 / 磁盘写入
-    # NOTE: 暂时不支持
-
-    # try:
-    #     with open(f"/proc/{pid}/disk_io", "r") as f:
-    #         print(f)
-    #         for line in f:
-    #             if line.startswith("read_issued:"):
-    #                 info["readIssued"] = line.strip().split()[1]
-    #             elif line.startswith("write_issued:"):
-    #                 info["writeIssued"] = line.strip().split()[1]
-    # except FileNotFoundError:
-    #     info["readIssued"] = -1
-    #     info["writeIssued"] = -1
-
+    task["cpuUsage"] = -1
+    task["pid"] = pid
+    task["rss"] = -1
+    task["readBytes"] = -1
+    task["writeBytes"] = -1
     task["readIssued"] = -1
     task["writeIssued"] = -1
 
-    task["pid"] = pid
+    logging.debug(str(task))
 
     return task
 
