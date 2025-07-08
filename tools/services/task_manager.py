@@ -8,11 +8,11 @@ from tools.interfaces import ITaskManager
 stopping = False
 
 
-def getTasksPid() -> List[int]:
+def listTasksPid() -> List[int]:
     return [int(p) for p in os.listdir("/proc") if p.isdigit()]
 
 
-def getTaskByPid(pid):
+def getTaskInfoByPid(pid):
     task = {}
 
     # 进程名称
@@ -105,16 +105,7 @@ def getTaskByPid(pid):
     return task
 
 
-def getTasks():
-    tasks: List[dict] = []
-    for pid in getTasksPid():
-        task = getTaskByPid(pid)
-        tasks.append(task)
-    logging.debug("call getTasks")
-    return tasks
-
-
-def killTask(pid: int):
+def killTaskByPid(pid: int):
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -125,7 +116,7 @@ def start(args):
     def service_thread():
         while not stopping:
             ITaskManager.add_service(
-                args, getTasks, killTask)
+                args, listTasksPid, getTaskInfoByPid, killTaskByPid)
 
     args.task_manager = threading.Thread(target=service_thread)
     args.task_manager.start()
