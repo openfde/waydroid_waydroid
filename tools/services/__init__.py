@@ -4,3 +4,4 @@ from tools.services.user_manager import start, stop
 from tools.services.clipboard_manager import start, stop
 from tools.services.hardware_manager import start, stop
 from tools.services.net_manager import start, stop
+from tools.services.task_manager import start, stop
