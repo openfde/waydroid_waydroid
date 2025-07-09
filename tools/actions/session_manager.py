@@ -99,7 +99,6 @@ def start(args, unlocked_cb=None, background=True):
     services.user_manager.start(args, session, unlocked_cb)
     services.clipboard_manager.start(args)
     services.net_manager.start(args)
-    services.task_manager.start(args)
     service(args, mainloop)
 
 def do_stop(args, looper):

@@ -2,60 +2,47 @@ import logging
 import os
 import threading
 import pwd
+import base64
+import psutil
 from typing import List
 from tools.interfaces import ITaskManager
 from pathlib import Path
 
 stopping = False
 
+user_home_path: Path = None
+
+for p in pwd.getpwall():
+    if p.pw_uid != 0 and p.pw_uid >= 1000 and "home" in p.pw_dir:
+        user_home_path = Path(p.pw_dir)
 
 def listTasksPid() -> List[int]:
     return [int(p) for p in os.listdir("/proc") if p.isdigit()]
 
 
-def getTaskInfoByPid(pid):
-    proc_path = Path("/proc") / str(pid)
-    status_path = proc_path / "status"
-    cmdline_path = proc_path / "cmdline"
+def getTasks():
+    tasks: List[dict] = []
+    for p in sorted(psutil.process_iter(['pid', 'name',
+                                         'username', 'memory_percent', 'cpu_percent', ]),
+                    key=lambda p: p.info["pid"], reverse=False):
+        try:
+            task = {}
+            task["name"] = p.name()
+            task["user"] = p.username()
+            task["vmsize"] = p.memory_info().vms
+            task["cpuUsage"] = int(p.cpu_percent() * 1000)  # 保留小数点后1位
+            task["pid"] = p.pid
+            task["rss"] = p.memory_info().rss
+            io_counters = p.io_counters()
+            task["readIssued"] = io_counters.read_count
+            task["writeIssued"] = io_counters.write_count
+            task["readBytes"] = io_counters.read_bytes
+            task["writeBytes"] = io_counters.write_bytes
+            tasks.append(task)
+        except psutil.NoSuchProcess:
+            continue
 
-    if not proc_path.exists():
-        return None
-
-    task = {}
-    cmdline = cmdline_path.read_text().strip().strip("\x00")
-    if cmdline == "":
-        # 内核线程，用户名为root,taskName去status里面找
-        task["user"] = "root"
-        with status_path.open("r") as f:
-            for line in f:
-                if line.startswith("Name:"):
-                    task["name"] = line.split(":")[1].strip().strip("\x00")
-                    break
-            else:
-                task["name"] = "unknown"  # 不可能
-    else:  # 用户线程，用户名要靠Uid获取
-        task["name"] = cmdline
-        with status_path.open("r") as f:
-            for line in f:
-                if line.startswith("Uid:"):
-                    uid_str = line.split(":")[1].strip().strip("\x00")
-                    if uid_str.isdigit():
-                        task["user"] = pwd.getpwuid(int(uid_str)).pw_name
-                    else:
-                        logging.debug(f"uid:{uid_str}")
-                        task["user"] = uid_str.strip().strip("\x00").split()[0]
-
-    task["cpuUsage"] = -1
-    task["pid"] = pid
-    task["rss"] = -1
-    task["readBytes"] = -1
-    task["writeBytes"] = -1
-    task["readIssued"] = -1
-    task["writeIssued"] = -1
-
-    logging.debug(str(task))
-
-    return task
+    return tasks
 
 
 def killTaskByPid(pid: int):
@@ -65,11 +52,34 @@ def killTaskByPid(pid: int):
         pass
 
 
+def png_encode_base64(file_path: Path):
+    with file_path.open("rb") as f:
+        images_data = f.read()
+        base64_encoded = base64.b64encode(images_data)
+        base64_string = base64_encoded.decode()
+    return base64_string
+
+
+def getIconB64ByTaskName(name: str):
+    try:
+        icon_path = Path((user_home_path /
+                          ".local/share/icons" / name).__str__() + ".png")
+        logging.debug(f"getIconB64 icon path:{icon_path}")
+
+        if icon_path.exists():
+            b64 = png_encode_base64(icon_path)
+            return b64
+        else:
+            return ""
+    except Exception as e:
+        logging.debug(f"getIconB64 error:{e}")
+
+
 def start(args):
     def service_thread():
         while not stopping:
             ITaskManager.add_service(
-                args, listTasksPid, getTaskInfoByPid, killTaskByPid)
+                args, getTasks, killTaskByPid, getIconB64ByTaskName)
 
     args.task_manager = threading.Thread(target=service_thread)
     args.task_manager.start()
