@@ -202,8 +202,9 @@ def generate_session_lxc_config(args, session):
         raise OSError("Failed to create XDG_RUNTIME_DIR mount point")
 
     wayland_socket = os.path.realpath(os.path.join(session["xdg_runtime_dir"], session["wayland_display"]))
-    if not make_entry(wayland_socket):
-        raise OSError("Failed to bind Wayland socket")
+    if 'FDE_USE_X11' not in os.environ:
+        if not make_entry(wayland_socket):
+            raise OSError("Failed to bind Wayland socket")
 
     pulse_socket = os.path.join(session["pulse_runtime_path"], "native")
     make_entry(pulse_socket)
