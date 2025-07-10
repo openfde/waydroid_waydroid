@@ -62,9 +62,10 @@ def start(args, unlocked_cb=None, background=True):
             logging.error(f"XDG_RUNTIME_DIR is not set; please don't start a Waydroid session with 'sudo'!")
             sys.exit(1)
         wayland_socket_path = os.path.join(xdg_runtime_dir, wayland_display)
-    if not os.path.exists(wayland_socket_path):
-        logging.error(f"Wayland socket '{wayland_socket_path}' doesn't exist; are you running a Wayland compositor?")
-        sys.exit(1)
+    if 'FDE_USE_X11' not in os.environ:
+        if not os.path.exists(wayland_socket_path):
+            logging.error(f"Wayland socket '{wayland_socket_path}' doesn't exist; are you running a Wayland compositor?")
+            sys.exit(1)
 
     waydroid_data = session["waydroid_data"]
     if not os.path.isdir(waydroid_data):
