@@ -16,9 +16,11 @@ SERVICE_NAME = "openfdetaskmanager"
 TRANSACTION_getTasks = 1
 TRANSACTION_killTaskByPid = 2
 TRANSACTION_getIconB64ByTaskName = 3
+TRANSACTION_getTaskPids = 4
+TRANSACTION_getTaskByPid = 5
 
 
-def add_service(args, getTasks, killTaskByPid, getIconB64ByTaskName):
+def add_service(args, getTasks, killTaskByPid, getIconB64ByTaskName, getTaskPids, getTaskByPid):
     helpers.drivers.loadBinderNodes(args)
     try:
         serviceManager = gbinder.ServiceManager(
@@ -53,6 +55,17 @@ def add_service(args, getTasks, killTaskByPid, getIconB64ByTaskName):
             arg1 = reader.read_string16()
             b64 = getIconB64ByTaskName(arg1)
             local_response.append_string16(b64)
+
+        if code == TRANSACTION_getTaskPids:
+            local_response.append_int32(0)  # return status normal
+            taskPids = getTaskPids()
+            local_response.append_string16(dumps(taskPids))
+
+        if code == TRANSACTION_getTaskByPid:
+            local_response.append_int32(0)  # return status normal
+            statsu, arg1 = reader.read_int32()
+            task = getTaskByPid(arg1)
+            local_response.append_string16(dumps(task))
 
         return local_response, 0
 

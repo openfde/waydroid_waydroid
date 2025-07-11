@@ -16,21 +16,17 @@ for p in pwd.getpwall():
     if p.pw_uid != 0 and p.pw_uid >= 1000 and "home" in p.pw_dir:
         user_home_path = Path(p.pw_dir)
 
-def listTasksPid() -> List[int]:
-    return [int(p) for p in os.listdir("/proc") if p.isdigit()]
-
 
 def getTasks():
     tasks: List[dict] = []
-    for p in sorted(psutil.process_iter(['pid', 'name',
-                                         'username', 'memory_percent', 'cpu_percent', ]),
-                    key=lambda p: p.info["pid"], reverse=False):
+    for p in psutil.process_iter(['pid', 'name',
+                                         'username', 'memory_percent', 'cpu_percent']):
         try:
             task = {}
             task["name"] = p.name()
             task["user"] = p.username()
             task["vmsize"] = p.memory_info().vms
-            task["cpuUsage"] = int(p.cpu_percent() * 1000)  # 保留小数点后1位
+            task["cpuUsage"] = p.cpu_percent()
             task["pid"] = p.pid
             task["rss"] = p.memory_info().rss
             io_counters = p.io_counters()
@@ -47,7 +43,7 @@ def getTasks():
 
 def killTaskByPid(pid: int):
     try:
-        os.kill(pid, 0)
+        os.system(f"kill -9 {pid}")
     except ProcessLookupError:
         pass
 
@@ -75,11 +71,41 @@ def getIconB64ByTaskName(name: str):
         logging.debug(f"getIconB64 error:{e}")
 
 
+def getTaskPids():
+    pids = []
+    for process in psutil.process_iter(['pid']):
+        try:
+            pids.append(process.info['pid'])
+        except psutil.NoSuchProcess:
+            continue
+    return pids
+
+
+def getTaskByPid(pid: int):
+    try:
+        p = psutil.Process(pid)
+        task = {}
+        task["name"] = p.name()
+        task["user"] = p.username()
+        task["vmsize"] = p.memory_info().vms
+        task["cpuUsage"] = p.cpu_percent()
+        task["pid"] = p.pid
+        task["rss"] = p.memory_info().rss
+        io_counters = p.io_counters()
+        task["readIssued"] = io_counters.read_count
+        task["writeIssued"] = io_counters.write_count
+        task["readBytes"] = io_counters.read_bytes
+        task["writeBytes"] = io_counters.write_bytes
+        return task
+    except psutil.NoSuchProcess:
+        return None
+
+
 def start(args):
     def service_thread():
         while not stopping:
             ITaskManager.add_service(
-                args, getTasks, killTaskByPid, getIconB64ByTaskName)
+                args, getTasks, killTaskByPid, getIconB64ByTaskName, getTaskPids, getTaskByPid)
 
     args.task_manager = threading.Thread(target=service_thread)
     args.task_manager.start()
