@@ -136,7 +136,10 @@ def start(args, session, unlocked_cb=None):
 
     def packageStateChangedHasVernsion(mode, packageName,version, uid):
         if('###' in version) :
-            logging.debug("packageAdditionFailed  packageName: "+packageName + ",version: "+version)
+            arrRes = version.split('###')
+            code = arrRes[0]
+            msg = arrRes[1]
+            logging.debug("packageAdditionFailed  packageName: "+packageName + ",msg: "+msg)
         else:
             logging.debug("packageAdd success  packageName: "+packageName + ",version: "+version)
             package_info = json.dumps({"PackageName": packageName, "Version": version,"OpCode":"install"})
