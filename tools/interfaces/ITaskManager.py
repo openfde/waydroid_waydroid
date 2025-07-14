@@ -18,9 +18,14 @@ TRANSACTION_killTaskByPid = 2
 TRANSACTION_getIconB64ByTaskName = 3
 TRANSACTION_getTaskPids = 4
 TRANSACTION_getTaskByPid = 5
+TRANSACTION_getEachCPUPercent = 6
+TRANSACTION_getMemoryAndSwap = 7
+TRANSACTION_getNetworkDownloadAndUpload = 8
 
 
-def add_service(args, getTasks, killTaskByPid, getIconB64ByTaskName, getTaskPids, getTaskByPid):
+def add_service(args, getTasks, killTaskByPid,
+                getIconB64ByTaskName, getTaskPids, getTaskByPid,
+                getEachCPUPercent, getMemoryAndSwap,getNetworkDownloadAndUpload):
     helpers.drivers.loadBinderNodes(args)
     try:
         serviceManager = gbinder.ServiceManager(
@@ -66,6 +71,24 @@ def add_service(args, getTasks, killTaskByPid, getIconB64ByTaskName, getTaskPids
             statsu, arg1 = reader.read_int32()
             task = getTaskByPid(arg1)
             local_response.append_string16(dumps(task))
+
+        if code == TRANSACTION_getEachCPUPercent:
+            local_response.append_int32(0)  # return status normal
+            status, arg1 = reader.read_int32()
+            each_cpu_persent = getEachCPUPercent(arg1 / 1000.0)
+            local_response.append_string16(dumps(each_cpu_persent))
+
+        if code == TRANSACTION_getMemoryAndSwap:
+            local_response.append_int32(0)  # return status normal
+            memory_and_swap = getMemoryAndSwap()
+            local_response.append_string16(dumps(memory_and_swap))
+
+        if code == TRANSACTION_getNetworkDownloadAndUpload:
+            local_response.append_int32(0)  # return status normal
+            status, arg1 = reader.read_int32()
+            network_info = getNetworkDownloadAndUpload(arg1)
+            local_response.append_string16(dumps(network_info))
+
 
         return local_response, 0
 

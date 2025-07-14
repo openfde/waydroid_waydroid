@@ -4,6 +4,7 @@ import threading
 import pwd
 import base64
 import psutil
+import time
 from typing import List
 from tools.interfaces import ITaskManager
 from pathlib import Path
@@ -101,11 +102,60 @@ def getTaskByPid(pid: int):
         return None
 
 
+def getEachCPUPercent(interval: float):
+    return psutil.cpu_percent(interval=interval, percpu=True)
+
+
+def getMemoryAndSwap():
+    memory = psutil.virtual_memory()
+    swap = psutil.swap_memory()
+    return {
+        "memory": {
+            "percent": memory.percent,
+            "used": memory.used,
+            "total": memory.total,
+            "cache": memory.cached
+        },
+        "swap": {
+            "percent": swap.percent,
+            "used": swap.used,
+            "total": swap.total
+        }
+    }
+
+
+def getNetworkDownloadAndUpload(interval:int):
+    interval /= 1000.0
+    net_io_old = psutil.net_io_counters()
+    time.sleep(interval)
+    net_io_new = psutil.net_io_counters()
+    bytes_sent = net_io_new.bytes_sent - net_io_old.bytes_sent
+    bytes_recv = net_io_new.bytes_recv - net_io_old.bytes_recv
+    upload_speed = bytes_sent / interval
+    download_speed = bytes_recv / interval
+    total_upload = net_io_new.bytes_sent
+    total_download = net_io_new.bytes_recv
+
+    return {
+        "download": {
+            "total": total_download,
+            "speed": download_speed
+        },
+        "upload": {
+            "total": total_upload,
+            "speed": upload_speed
+        }
+    }
+
+
 def start(args):
     def service_thread():
         while not stopping:
             ITaskManager.add_service(
-                args, getTasks, killTaskByPid, getIconB64ByTaskName, getTaskPids, getTaskByPid)
+                args, getTasks, killTaskByPid,
+                getIconB64ByTaskName, getTaskPids,
+                getTaskByPid, getEachCPUPercent, 
+                getMemoryAndSwap,getNetworkDownloadAndUpload)
 
     args.task_manager = threading.Thread(target=service_thread)
     args.task_manager.start()
