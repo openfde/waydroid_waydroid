@@ -138,11 +138,14 @@ def start(args, session, unlocked_cb=None):
         package_info = json.dumps({"PackageName": packageName, "Version": version,"OpCode":"install"})
         cmd = ['fde_ctrl', '-msg', package_info]
         threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
+
+    def packageAdditionFailed(mode, packageName,code, msg):
+        print("packageAdditionFailed packageName: "+packageName + ",code: "+code + ",msg: "+msg )  
                            
 
     def service_thread():
         while not stopping:
-            IUserMonitor.add_service(args, userUnlocked, packageStateChanged,packageStateChangedHasVernsion)
+            IUserMonitor.add_service(args, userUnlocked, packageStateChanged,packageStateChangedHasVernsion,packageAdditionFailed)
 
     global stopping
     stopping = False
