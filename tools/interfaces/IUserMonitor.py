@@ -10,9 +10,8 @@ SERVICE_NAME = "openfdeusermonitor"
 TRANSACTION_userUnlocked = 1
 TRANSACTION_packageStateChanged = 2
 TRANSACTION_packageStateChangedHasVernsion = 3
-TRANSACTION_packageAdditionFailed = 4
 
-def add_service(args, userUnlocked, packageStateChanged,packageStateChangedHasVernsion,packageAdditionFailed):
+def add_service(args, userUnlocked, packageStateChanged,packageStateChangedHasVernsion):
     helpers.drivers.loadBinderNodes(args)
     try:
         serviceManager = gbinder.ServiceManager("/dev/" + args.BINDER_DRIVER, args.SERVICE_MANAGER_PROTOCOL, args.BINDER_PROTOCOL)
@@ -41,15 +40,7 @@ def add_service(args, userUnlocked, packageStateChanged,packageStateChangedHasVe
             status, arg4 = reader.read_int32()
             packageStateChangedHasVernsion(arg1, arg2, arg3, arg4)
             local_response.append_int32(0)   
-        if code == TRANSACTION_packageAdditionFailed:
-            status, arg1 = reader.read_int32()
-            arg2 = reader.read_string16()
-            arg3 = reader.read_string16()
-            status, arg4 = reader.read_int32()
-            packageAdditionFailed(arg1, arg2, arg3, arg4)
-            local_response.append_int32(0)     
-
-
+    
         return local_response, 0
 
     def binder_presence():

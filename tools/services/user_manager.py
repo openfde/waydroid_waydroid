@@ -135,17 +135,18 @@ def start(args, session, unlocked_cb=None):
             
 
     def packageStateChangedHasVernsion(mode, packageName,version, uid):
-        package_info = json.dumps({"PackageName": packageName, "Version": version,"OpCode":"install"})
-        cmd = ['fde_ctrl', '-msg', package_info]
-        threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
-
-    def packageAdditionFailed(mode, packageName, msg , code):
-        logging.debug("packageAdditionFailed packageName: "+packageName + ",code: "+code + ",msg: "+msg )  
-                           
+        if('###' in version) :
+            logging.debug("packageAdditionFailed  packageName: "+packageName + ",version: "+version)
+        else:
+            logging.debug("packageAdd success  packageName: "+packageName + ",version: "+version)
+            package_info = json.dumps({"PackageName": packageName, "Version": version,"OpCode":"install"})
+            cmd = ['fde_ctrl', '-msg', package_info]
+            threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
+             
 
     def service_thread():
         while not stopping:
-            IUserMonitor.add_service(args, userUnlocked, packageStateChanged,packageStateChangedHasVernsion,packageAdditionFailed)
+            IUserMonitor.add_service(args, userUnlocked, packageStateChanged,packageStateChangedHasVernsion)
 
     global stopping
     stopping = False
