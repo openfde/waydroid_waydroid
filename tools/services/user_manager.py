@@ -139,8 +139,8 @@ def start(args, session, unlocked_cb=None):
         cmd = ['fde_ctrl', '-msg', package_info]
         threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
 
-    def packageAdditionFailed(mode, packageName,code, msg):
-        print("packageAdditionFailed packageName: "+packageName + ",code: "+code + ",msg: "+msg )  
+    def packageAdditionFailed(mode, packageName, msg , code):
+        logging.debug("packageAdditionFailed packageName: "+packageName + ",code: "+code + ",msg: "+msg )  
                            
 
     def service_thread():
