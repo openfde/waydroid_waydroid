@@ -5,6 +5,7 @@ import pwd
 import base64
 import psutil
 import time
+import subprocess
 from typing import List
 from tools.interfaces import ITaskManager
 from pathlib import Path
@@ -12,16 +13,18 @@ from pathlib import Path
 stopping = False
 
 user_home_path: Path = None
+user_name: str = None
 
 for p in pwd.getpwall():
     if p.pw_uid != 0 and p.pw_uid >= 1000 and "home" in p.pw_dir:
         user_home_path = Path(p.pw_dir)
+        user_name = p.pw_name
 
 
 def getTasks():
     tasks: List[dict] = []
     for p in psutil.process_iter(['pid', 'name',
-                                         'username', 'memory_percent', 'cpu_percent']):
+                                         'username', 'memory_percent', 'cpu_percent',"nice"]):
         try:
             task = {}
             task["name"] = p.name()
@@ -35,6 +38,7 @@ def getTasks():
             task["writeIssued"] = io_counters.write_count
             task["readBytes"] = io_counters.read_bytes
             task["writeBytes"] = io_counters.write_bytes
+            task["nice"] = p.nice()
             tasks.append(task)
         except psutil.NoSuchProcess:
             continue
@@ -86,6 +90,7 @@ def getTaskByPid(pid: int):
     try:
         p = psutil.Process(pid)
         task = {}
+        task["running"] = p.is_running()
         task["name"] = p.name()
         task["user"] = p.username()
         task["vmsize"] = p.memory_info().vms
@@ -123,6 +128,27 @@ def getMemoryAndSwap():
         }
     }
 
+def getDiskReadAndWrite(interval:int):
+    interval /= 1000.0
+    io_start = psutil.disk_io_counters()
+    time.sleep(interval)
+    io_end = psutil.disk_io_counters()
+    read_speed = (io_end.read_bytes - io_start.read_bytes) / interval
+    write_speed = (io_end.write_bytes - io_start.write_bytes) / interval
+    read_total = io_end.read_bytes
+    write_total = io_end.write_bytes
+
+    return {
+        "read":{
+            "speed":read_speed,
+            "total":read_total
+        },
+        "write":{
+            "speed":write_speed,
+            "total":write_total
+        }
+    }
+
 
 def getNetworkDownloadAndUpload(interval:int):
     interval /= 1000.0
@@ -147,15 +173,41 @@ def getNetworkDownloadAndUpload(interval:int):
         }
     }
 
+def getFileSystemUsage():
+    result = subprocess.run(["df", "-Th"], capture_output=True, text=True)
+    output = result.stdout
+    outputs = output.split("\n")
+    ret = []
+    for i, line in enumerate(outputs):
+        if i == 0 or i == len(outputs)-1:
+            continue
+        items = line.split()
+        file_system, file_system_type, storage, used, available, percent, mount_point = items
+        ret.append({
+            "used": used,
+            "catalogue":mount_point,
+            "device":file_system,
+            "type":file_system_type,
+            "storage":storage,
+            "available":available,
+            "percent": int(percent.strip("%"))
+        })
+    return ret
+
+def changeTaskPriority(pid: int, priority: int):
+    os.system(f"renice {priority} -p {pid}")
+
 
 def start(args):
     def service_thread():
+        args.user_name = user_name
         while not stopping:
             ITaskManager.add_service(
                 args, getTasks, killTaskByPid,
                 getIconB64ByTaskName, getTaskPids,
                 getTaskByPid, getEachCPUPercent, 
-                getMemoryAndSwap,getNetworkDownloadAndUpload)
+                getMemoryAndSwap,getNetworkDownloadAndUpload,
+                getDiskReadAndWrite,getFileSystemUsage,changeTaskPriority)
 
     args.task_manager = threading.Thread(target=service_thread)
     args.task_manager.start()
