@@ -17,7 +17,7 @@ TRANSACTION_getTasks = 1
 TRANSACTION_killTaskByPid = 2
 TRANSACTION_getIconB64ByTaskName = 3
 TRANSACTION_getTaskPids = 4
-TRANSACTION_getTaskByPid = 5
+TRANSACTION_getTaskUpdateInfoByPid = 5
 TRANSACTION_getEachCPUPercent = 6
 TRANSACTION_getMemoryAndSwap = 7
 TRANSACTION_getNetworkDownloadAndUpload = 8
@@ -28,10 +28,10 @@ TRANSACTION_getUserName = 12
 
 
 def add_service(args, getTasks, killTaskByPid,
-                getIconB64ByTaskName, getTaskPids, 
-                getTaskByPid,getEachCPUPercent, 
-                getMemoryAndSwap,getNetworkDownloadAndUpload,
-                getDiskReadAndWrite,getFileSystemUsage,changeTaskPriority):
+                getIconB64ByTaskName, getTaskPids,
+                getTaskUpdateInfoByPid, getEachCPUPercent,
+                getMemoryAndSwap, getNetworkDownloadAndUpload,
+                getDiskReadAndWrite, getFileSystemUsage, changeTaskPriority):
     helpers.drivers.loadBinderNodes(args)
     try:
         serviceManager = gbinder.ServiceManager(
@@ -40,8 +40,6 @@ def add_service(args, getTasks, killTaskByPid,
         serviceManager = gbinder.ServiceManager("/dev/" + args.BINDER_DRIVER)
 
     def response_handler(req: RemoteRequest, code, flags):
-        logging.debug(
-            "{}: Received transaction: {}".format(SERVICE_NAME, code))
         reader: Reader = req.init_reader()
         local_response: Writer = response.new_reply()
 
@@ -50,15 +48,12 @@ def add_service(args, getTasks, killTaskByPid,
             try:
                 tasks: List[dict] = getTasks()
             except Exception as e:
-                euid = os.geteuid()
-                logging.debug(f"getTasks error:{e}")
-                logging.debug(f"euid:{euid}")
+                pass
             local_response.append_string16(dumps(tasks))
 
         if code == TRANSACTION_killTaskByPid:
             local_response.append_int32(0)  # return status normal
             status, arg1 = reader.read_int32()
-            logging.debug(f"killTask pid:{arg1}")
             killTaskByPid(arg1)
 
         if code == TRANSACTION_getIconB64ByTaskName:
@@ -72,10 +67,10 @@ def add_service(args, getTasks, killTaskByPid,
             taskPids = getTaskPids()
             local_response.append_string16(dumps(taskPids))
 
-        if code == TRANSACTION_getTaskByPid:
+        if code == TRANSACTION_getTaskUpdateInfoByPid:
             local_response.append_int32(0)  # return status normal
             statsu, arg1 = reader.read_int32()
-            task = getTaskByPid(arg1)
+            task = getTaskUpdateInfoByPid(arg1)
             local_response.append_string16(dumps(task))
 
         if code == TRANSACTION_getEachCPUPercent:
@@ -94,30 +89,27 @@ def add_service(args, getTasks, killTaskByPid,
             status, arg1 = reader.read_int32()
             network_info = getNetworkDownloadAndUpload(arg1)
             local_response.append_string16(dumps(network_info))
-        
+
         if code == TRANSACTION_getDiskReadAndWrite:
-            local_response.append_int32(0) # return status normal
+            local_response.append_int32(0)  # return status normal
             status, arg1 = reader.read_int32()
             disk_info = getDiskReadAndWrite(arg1)
             local_response.append_string16(dumps(disk_info))
-        
+
         if code == TRANSACTION_getFileSystemUsage:
             local_response.append_int32(0)  # return status normal
             file_system_info = getFileSystemUsage()
             local_response.append_string16(dumps(file_system_info))
-        
+
         if code == TRANSACTION_changeTaskPriority:
-            local_response.append_int32(0) # return status normal
+            local_response.append_int32(0)  # return status normal
             status, arg1 = reader.read_int32()
             status, arg2 = reader.read_int32()
-            changeTaskPriority(arg1,arg2)
-        
+            changeTaskPriority(arg1, arg2)
+
         if code == TRANSACTION_getUserName:
             local_response.append_int32(0)
-            try:
-                local_response.append_string16(args.user_name)
-            except AttributeError:
-                logging.debug("username not found") 
+            local_response.append_string16(args.user_name)
 
         return local_response, 0
 

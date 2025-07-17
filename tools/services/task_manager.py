@@ -24,7 +24,7 @@ for p in pwd.getpwall():
 def getTasks():
     tasks: List[dict] = []
     for p in psutil.process_iter(['pid', 'name',
-                                         'username', 'memory_percent', 'cpu_percent',"nice"]):
+                                         'username', 'memory_percent', 'cpu_percent', "nice"]):
         try:
             task = {}
             task["name"] = p.name()
@@ -39,10 +39,20 @@ def getTasks():
             task["readBytes"] = io_counters.read_bytes
             task["writeBytes"] = io_counters.write_bytes
             task["nice"] = p.nice()
+            task["isAndroidApp"] = False
+            cmdlines = p.cmdline()
+            if len(cmdlines) == 0:
+                task["isAndroidApp"] = False
+            elif "." not in cmdlines[0] or "." not in task["name"]:
+                task["isAndroidApp"] = False
+            elif "/" in cmdlines[0]:
+                task["isAndroidApp"] = False
+            elif task["name"] in cmdlines[0]:
+                task["isAndroidApp"] = True
+                task["name"] = cmdlines[0]
             tasks.append(task)
         except psutil.NoSuchProcess:
             continue
-
     return tasks
 
 
@@ -86,23 +96,19 @@ def getTaskPids():
     return pids
 
 
-def getTaskByPid(pid: int):
+def getTaskUpdateInfoByPid(pid: int):
     try:
-        p = psutil.Process(pid)
         task = {}
-        task["running"] = p.is_running()
-        task["name"] = p.name()
-        task["user"] = p.username()
+        p = psutil.Process(pid)
         task["vmsize"] = p.memory_info().vms
         task["cpuUsage"] = p.cpu_percent()
-        task["pid"] = p.pid
         task["rss"] = p.memory_info().rss
         io_counters = p.io_counters()
         task["readIssued"] = io_counters.read_count
         task["writeIssued"] = io_counters.write_count
         task["readBytes"] = io_counters.read_bytes
         task["writeBytes"] = io_counters.write_bytes
-        return task
+        task["nice"] = p.nice()
     except psutil.NoSuchProcess:
         return None
 
@@ -128,7 +134,8 @@ def getMemoryAndSwap():
         }
     }
 
-def getDiskReadAndWrite(interval:int):
+
+def getDiskReadAndWrite(interval: int):
     interval /= 1000.0
     io_start = psutil.disk_io_counters()
     time.sleep(interval)
@@ -139,18 +146,18 @@ def getDiskReadAndWrite(interval:int):
     write_total = io_end.write_bytes
 
     return {
-        "read":{
-            "speed":read_speed,
-            "total":read_total
+        "read": {
+            "speed": read_speed,
+            "total": read_total
         },
-        "write":{
-            "speed":write_speed,
-            "total":write_total
+        "write": {
+            "speed": write_speed,
+            "total": write_total
         }
     }
 
 
-def getNetworkDownloadAndUpload(interval:int):
+def getNetworkDownloadAndUpload(interval: int):
     interval /= 1000.0
     net_io_old = psutil.net_io_counters()
     time.sleep(interval)
@@ -173,6 +180,7 @@ def getNetworkDownloadAndUpload(interval:int):
         }
     }
 
+
 def getFileSystemUsage():
     result = subprocess.run(["df", "-Th"], capture_output=True, text=True)
     output = result.stdout
@@ -185,14 +193,15 @@ def getFileSystemUsage():
         file_system, file_system_type, storage, used, available, percent, mount_point = items
         ret.append({
             "used": used,
-            "catalogue":mount_point,
-            "device":file_system,
-            "type":file_system_type,
-            "storage":storage,
-            "available":available,
+            "catalogue": mount_point,
+            "device": file_system,
+            "type": file_system_type,
+            "storage": storage,
+            "available": available,
             "percent": int(percent.strip("%"))
         })
     return ret
+
 
 def changeTaskPriority(pid: int, priority: int):
     os.system(f"renice {priority} -p {pid}")
@@ -205,9 +214,9 @@ def start(args):
             ITaskManager.add_service(
                 args, getTasks, killTaskByPid,
                 getIconB64ByTaskName, getTaskPids,
-                getTaskByPid, getEachCPUPercent, 
-                getMemoryAndSwap,getNetworkDownloadAndUpload,
-                getDiskReadAndWrite,getFileSystemUsage,changeTaskPriority)
+                getTaskUpdateInfoByPid, getEachCPUPercent,
+                getMemoryAndSwap, getNetworkDownloadAndUpload,
+                getDiskReadAndWrite, getFileSystemUsage, changeTaskPriority)
 
     args.task_manager = threading.Thread(target=service_thread)
     args.task_manager.start()
