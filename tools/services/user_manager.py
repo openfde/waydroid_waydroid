@@ -139,10 +139,12 @@ def start(args, session, unlocked_cb=None):
             arrRes = version.split('###')
             code = arrRes[0]
             msg = arrRes[1]
-            logging.debug("packageAdditionFailed  packageName: "+packageName + ",msg: "+msg)
+            package_info = json.dumps({"PackageName": packageName, "Version": version,"OpCode":"install","Status":"Failed","FailedMsg":msg})
+            cmd = ['fde_ctrl', '-msg', package_info]
+            threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
         else:
             logging.debug("packageAdd success  packageName: "+packageName + ",version: "+version)
-            package_info = json.dumps({"PackageName": packageName, "Version": version,"OpCode":"install"})
+            package_info = json.dumps({"PackageName": packageName, "Version": version,"OpCode":"install","Status":"Success"})
             cmd = ['fde_ctrl', '-msg', package_info]
             threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
              
