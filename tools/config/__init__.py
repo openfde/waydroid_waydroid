@@ -62,7 +62,8 @@ session_defaults = {
     "pulse_cookie_path": os.path.expanduser("~") + "/.config/pulse/cookie",
     "state": "STOPPED",
     "lcd_density": "0",
-    "background_start": "true"
+    "background_start": "true",
+    "xmodifiers": str(os.environ.get('XMODIFIERS'))
 }
 session_defaults["config_path"] = defaults["work"] + "/session.cfg"
 session_defaults["waydroid_data"] = session_defaults["xdg_data_home"] + \
