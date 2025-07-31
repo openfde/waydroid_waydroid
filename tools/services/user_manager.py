@@ -30,18 +30,12 @@ def start(args, session, unlocked_cb=None):
 
         packageName = appInfo["packageName"]
 
-        desktop_file_path = apps_dir + "/waydroid." + packageName + ".desktop"
+        desktop_file_path = apps_dir + "/" + packageName + "_fde.desktop"
         if not os.path.exists(desktop_file_path):
             lines = ["[Desktop Entry]", "Type=Application"]
             lines.append("Name=" + appInfo["name"])
-            lines.append("Exec=waydroid app launch " + packageName)
+            lines.append("Exec=fde_launch " + packageName)
             lines.append("Icon=" + waydroid_data + "/icons/" + packageName + ".png")
-            lines.append("Categories=X-WayDroid-App;")
-            lines.append("X-Purism-FormFactor=Workstation;Mobile;")
-            lines.append("Actions=app_settings;")
-            lines.append("[Desktop Action app_settings]")
-            lines.append("Name=App Settings")
-            lines.append("Exec=waydroid app intent android.settings.APPLICATION_DETAILS_SETTINGS package:" + packageName)
             desktop_file = open(desktop_file_path, "w")
             for line in lines:
                 desktop_file.write(line + "\n")
@@ -78,7 +72,6 @@ def start(args, session, unlocked_cb=None):
         except requests.exceptions.RequestException as e:
             logging.warning("post fs_fuing failed")
 
-        """
         tools.helpers.net.adb_connect(args)
 
         platformService = IPlatform.get_service(args)
@@ -94,7 +87,6 @@ def start(args, session, unlocked_cb=None):
                 makeWaydroidDesktopFile(False)
             else:
                 makeWaydroidDesktopFile(True)
-        """
         if unlocked_cb:
             unlocked_cb()
 
