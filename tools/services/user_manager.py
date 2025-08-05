@@ -31,10 +31,12 @@ def start(args, session, unlocked_cb=None):
         packageName = appInfo["packageName"]
 
         desktop_file_path = apps_dir + "/" + packageName + "_fde.desktop"
-        if not os.path.exists(desktop_file_path):
+        if os.path.isfile(desktop_file_path):
+            os.remove(desktop_file_path)
             lines = ["[Desktop Entry]", "Type=Application"]
             lines.append("Name=" + appInfo["name"])
             lines.append("Exec=fde_launch " + packageName)
+            lines.append("NoDisplay=true")
             lines.append("Icon=" + waydroid_data + "/icons/" + packageName + ".png")
             desktop_file = open(desktop_file_path, "w")
             for line in lines:
