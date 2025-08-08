@@ -110,6 +110,8 @@ def start(args, unlocked_cb=None, background=True):
     service(args, mainloop)
 
 def do_stop(args, looper):
+    logging.error("enable x11 keyboard auto repeat.")
+    os.system("xset r on")
     services.user_manager.stop(args)
     services.clipboard_manager.stop(args)
     services.net_manager.stop(args)
