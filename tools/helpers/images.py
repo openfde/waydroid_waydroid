@@ -134,11 +134,9 @@ def make_prop(args, cfg, full_props_path):
         props.append("ro.sf.lcd_density=" + dpi)
 
     if cfg["xdg_session_type"] == "x11":
-        logging.warn("xdg_session type is x11")
         props.append("ro.hardware.hwcomposer=x11")
     else:
         props.append("ro.hardware.hwcomposer=waydroid")
-        logging.warn("xdg_session type is wayland")
     props.append("ro.openfde.version=20230318.111310")
     props.append("ro.product.brand=google")
     props.append("ro.product.manufacturer=Google")
