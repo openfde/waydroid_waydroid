@@ -140,6 +140,7 @@ def list(args):
             for app in appsList:
                 print("Name: " + app["name"])
                 print("packageName: " + app["packageName"])
+                print("version: "+app["version"])
                 print("categories:")
                 for cat in app["categories"]:
                     print("\t" + cat)

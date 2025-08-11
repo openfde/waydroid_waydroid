@@ -88,6 +88,7 @@ class IPlatform:
                         appinfo = {
                             "name": reader.read_string16(),
                             "packageName": reader.read_string16(),
+                            "version": reader.read_string16(),
                             "action": reader.read_string16(),
                             "launchIntent": reader.read_string16(),
                             "componentPackageName": reader.read_string16(),
