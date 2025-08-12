@@ -13,6 +13,7 @@ import dbus
 
 def install(args):
     try:
+        logging.debug("install path: "+args.PACKAGE)
         tools.helpers.ipc.DBusSessionService()
 
         cm = tools.helpers.ipc.DBusContainerService()
@@ -27,7 +28,7 @@ def install(args):
         shutil.copyfile(args.PACKAGE, tmp_dir + "/base.apk")
         platformService = IPlatform.get_service(args)
         if platformService:
-            platformService.installApp("/data/waydroid_tmp/base.apk")
+            platformService.installApp("/data/waydroid_tmp/base.apk",args.PACKAGE)
         else:
             logging.error("Failed to access IPlatform service")
         os.remove(tmp_dir + "/base.apk")

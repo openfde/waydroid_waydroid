@@ -93,7 +93,7 @@ def start(args, session, unlocked_cb=None):
             unlocked_cb()
 
     def packageStateChanged(mode, packageName, uid):
-        logging.debug("packageStateChanged")
+        logging.debug("packageStateChanged mode: "+mode + ",packageName: "+packageName)
 
         platformService = IPlatform.get_service(args)
         if platformService:
