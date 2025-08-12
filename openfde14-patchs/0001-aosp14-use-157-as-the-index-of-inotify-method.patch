@@ -1,0 +1,25 @@
+From ded2c2444396a3750614e11f846415da8e74d423 Mon Sep 17 00:00:00 2001
+From: 185457686 <185457686@qq.com>
+Date: Tue, 12 Aug 2025 17:28:56 +0800
+Subject: [PATCH] aosp14 use 157 as the index of inotify method
+
+---
+ tools/interfaces/INotification.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/interfaces/INotification.py b/tools/interfaces/INotification.py
+index cc57ac3..50a320b 100644
+--- a/tools/interfaces/INotification.py
++++ b/tools/interfaces/INotification.py
+@@ -9,7 +9,7 @@ import signal
+ INTERFACE = "android.app.INotificationManager"
+ SERVICE_NAME = "notification"
+ 
+-TRANSACTION_desktopfile_updated = 138
++TRANSACTION_desktopfile_updated = 157
+ 
+ class INotification:
+     def __init__(self, remote):
+-- 
+2.39.0
+
