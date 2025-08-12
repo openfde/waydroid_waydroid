@@ -9,7 +9,7 @@ import signal
 INTERFACE = "android.app.INotificationManager"
 SERVICE_NAME = "notification"
 
-TRANSACTION_desktopfile_updated = 157
+TRANSACTION_desktopfile_updated = 138
 
 class INotification:
     def __init__(self, remote):
