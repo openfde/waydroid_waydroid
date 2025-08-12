@@ -202,7 +202,7 @@ def generate_session_lxc_config(args, session):
         raise OSError("Failed to create XDG_RUNTIME_DIR mount point")
 
     wayland_socket = os.path.realpath(os.path.join(session["xdg_runtime_dir"], session["wayland_display"]))
-    if os.environ.get('XDG_SESSION_TYPE') == "wayland":
+    if session["xdg_session_type"] ==  "wayland":
         if not make_entry(wayland_socket):
             raise OSError("Failed to bind Wayland socket")
 
