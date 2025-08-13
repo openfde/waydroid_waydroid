@@ -93,8 +93,8 @@ def start(args, session, unlocked_cb=None):
             unlocked_cb()
 
     def packageStateChanged(mode, packageName, uid):
-        logging.debug("packageStateChanged mode: "+mode + ",packageName: "+packageName)
-
+        logging.debug("packageStateChanged mode: {}, packageName: {}".format(mode, packageName))
+        
         platformService = IPlatform.get_service(args)
         if platformService:
             multiwin = platformService.getprop(
