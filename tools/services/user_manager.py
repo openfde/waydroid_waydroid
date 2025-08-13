@@ -116,7 +116,7 @@ def start(args, session, unlocked_cb=None):
                     # Package added
                     makeDesktopFile(appInfo)
                 elif mode == 1:
-                    package_info = json.dumps({"PackageName": packageName, "OpCode":"remove"},"Status":"Success")
+                    package_info = json.dumps({"PackageName": packageName, "OpCode":"remove","Status":"Success"})
                     cmd = ['fde_ctrl', '-msg', package_info]
                     threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
                     if os.path.isfile(desktop_file_path):
