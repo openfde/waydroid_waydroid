@@ -2,7 +2,7 @@ import glob
 import os
 import tools.helpers.props
 
-unsupported = ["nvidia", "nouveau","ftv310"]
+unsupported = ["nvidia", "ftv310"]
 
 def getKernelDriver(args, dev):
     return tools.helpers.props.file_get(args, "/sys/class/drm/{}/device/uevent".format(dev), "DRIVER")
@@ -32,6 +32,7 @@ def getVulkanDriver(args, dev):
         "virtio-pci": "virtio",
         "pvrsrvkm": "powervr",
         "ftg340": "LEOPARD",
+	"nouveau": "nouveau",
         "jmgpu" :"ranchu"
     }
     kernel_driver = getKernelDriver(args, dev)
