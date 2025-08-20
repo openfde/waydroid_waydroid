@@ -33,17 +33,17 @@ def start(args, session, unlocked_cb=None):
         desktop_file_path = apps_dir + "/" + packageName + "_fde.desktop"
         if os.path.isfile(desktop_file_path):
             os.remove(desktop_file_path)
-            lines = ["[Desktop Entry]", "Type=Application"]
-            lines.append("Name=" + appInfo["name"])
-            lines.append("Exec=fde_launch " + packageName)
-            lines.append("NoDisplay=true")
-            lines.append("Icon=" + waydroid_data + "/icons/" + packageName + ".png")
-            desktop_file = open(desktop_file_path, "w")
-            for line in lines:
-                desktop_file.write(line + "\n")
-            desktop_file.close()
-            os.chmod(desktop_file_path, 0o644)
-            return 0
+        lines = ["[Desktop Entry]", "Type=Application"]
+        lines.append("Name=" + appInfo["name"])
+        lines.append("Exec=fde_launch " + packageName)
+        lines.append("NoDisplay=true")
+        lines.append("Icon=" + waydroid_data + "/icons/" + packageName + ".png")
+        desktop_file = open(desktop_file_path, "w")
+        for line in lines:
+            desktop_file.write(line + "\n")
+        desktop_file.close()
+        os.chmod(desktop_file_path, 0o644)
+        return 0
 
     def makeWaydroidDesktopFile(hide):
         desktop_file_path = apps_dir + "/Waydroid.desktop"
