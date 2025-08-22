@@ -124,7 +124,10 @@ def start(args):
 
         GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGINT, sigint_handler, None)
         GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGTERM, sigint_handler, None)
+        
+        services.task_manager.start(args)
         service(args, mainloop)
+
     else:
         logging.error("WayDroid container is {}".format(status))
 

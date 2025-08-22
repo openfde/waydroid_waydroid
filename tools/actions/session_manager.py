@@ -105,6 +105,7 @@ def do_stop(args, looper):
     services.user_manager.stop(args)
     services.clipboard_manager.stop(args)
     services.net_manager.stop(args)
+    services.task_manager.stop(args)
     looper.quit()
 
 def stop(args):
