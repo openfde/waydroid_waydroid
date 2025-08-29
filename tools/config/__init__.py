@@ -58,6 +58,7 @@ session_defaults = {
     "xdg_data_home": str(os.environ.get('XDG_DATA_HOME', os.path.expanduser("~") + "/.local/share")),
     "xdg_runtime_dir": str(os.environ.get('XDG_RUNTIME_DIR')),
     "wayland_display": str(os.environ.get('WAYLAND_DISPLAY')),
+    "x11_display": str(os.environ.get('DISPLAY')),
     "pulse_runtime_path": str(os.environ.get('PULSE_RUNTIME_PATH')),
     "xdg_session_type": str(os.environ.get('XDG_SESSION_TYPE')),
     "pulse_cookie_path": os.path.expanduser("~") + "/.config/pulse/cookie",
