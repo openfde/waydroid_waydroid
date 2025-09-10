@@ -142,6 +142,13 @@ def start(args, session, unlocked_cb=None):
             package_info = json.dumps({"PackageName": packageName, "Version": version,"OpCode":"install","Status":"Success"})
             cmd = ['fde_ctrl', '-msg', package_info]
             threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
+            platformService = IPlatform.get_service(args)
+            if platformService:
+                multiwin = platformService.getprop("persist.waydroid.multi_windows", "false")
+                if multiwin == "true":
+                    # Package added
+                    appInfo = platformService.getAppInfo(packageName)
+                    makeDesktopFile(appInfo)
              
 
     def service_thread():
