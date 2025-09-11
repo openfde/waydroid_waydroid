@@ -15,7 +15,7 @@ import dbus
 import dbus.service
 import dbus.exceptions
 from gi.repository import GLib
-from tools import gpu
+from tools.helpers import gpu
 
 class DbusContainerManager(dbus.service.Object):
     def __init__(self, looper, bus, object_path, args):
