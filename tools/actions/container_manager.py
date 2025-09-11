@@ -31,6 +31,20 @@ class DbusContainerManager(dbus.service.Object):
         pid = dbus_info.GetConnectionUnixProcessID(sender)
         if str(uid) != "0" and str(pid) != session["pid"]:
             raise RuntimeError("Invalid session pid")
+        gralloc_value = None
+        prop_file = "/var/lib/waydroid/waydroid_base.prop"
+        if os.path.exists(prop_file):
+            with open(prop_file, "r") as f:
+                for line in f:
+                    if line.startswith("ro.hardware.gralloc="):
+                        gralloc_value = line.strip().split("=", 1)[1]
+                        break
+        if gralloc_value == "LEOPARD":
+            devfreq_path = "/sys/class/devfreq/"
+            for dev in os.listdir(devfreq_path):
+                governor_path = os.path.join(devfreq_path, dev, "governor")
+                if os.path.exists(governor_path):
+                    os.system(f'echo performance > {governor_path}')
         do_start(self.args, session)
 
     @dbus.service.method("id.waydro.ContainerManager", in_signature='b', out_signature='')
