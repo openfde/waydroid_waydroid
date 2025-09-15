@@ -61,6 +61,7 @@ session_defaults = {
     "x11_display": str(os.environ.get('DISPLAY')),
     "pulse_runtime_path": str(os.environ.get('PULSE_RUNTIME_PATH')),
     "pulse_cookie_path": os.path.expanduser("~") + "/.config/pulse/cookie",
+    "xdg_session_type": str(os.environ.get('XDG_SESSION_TYPE')),
     "state": "STOPPED",
     "lcd_density": "0",
     "background_start": "true",
