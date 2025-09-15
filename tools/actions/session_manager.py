@@ -64,8 +64,7 @@ def start(args, unlocked_cb=None, background=True):
             sys.exit(1)
     else:
         logging.error(f""+os.environ.get("XDG_SESSION_TYPE") +" is not support, must one of the x11 or wayland")
-        sys.exit(1
-
+        sys.exit(1)
     waydroid_data = session["waydroid_data"]
     if not os.path.isdir(waydroid_data):
         os.makedirs(waydroid_data)

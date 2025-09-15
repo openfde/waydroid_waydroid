@@ -116,6 +116,7 @@ def generate_nodes_lxc_config(args):
 
     # Make a tmpfs at every possible rootfs mountpoint
     make_entry("tmpfs", "tmp", "tmpfs", "nodev 0 0", False)
+    make_entry("/tmp/.X11-unix", "tmpx11/.X11-unix", options="bind,optional 0 0")
     make_entry("tmpfs", "var", "tmpfs", "nodev 0 0", False)
     make_entry("tmpfs", "run", "tmpfs", "nodev 0 0", False)
 
