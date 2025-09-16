@@ -116,7 +116,6 @@ def generate_nodes_lxc_config(args):
 
     # Make a tmpfs at every possible rootfs mountpoint
     make_entry("tmpfs", "tmp", "tmpfs", "nodev 0 0", False)
-    make_entry("/tmp/.X11-unix", "tmpx11/.X11-unix", options="bind,optional 0 0")
     make_entry("tmpfs", "var", "tmpfs", "nodev 0 0", False)
     make_entry("tmpfs", "run", "tmpfs", "nodev 0 0", False)
 
@@ -234,6 +233,9 @@ def generate_session_lxc_config(args, session):
     if session["xdg_session_type"] ==  "wayland":
         if not make_entry(wayland_socket):
             raise OSError("Failed to bind Wayland socket")
+    elif session["xdg_session_type"] ==  "x11":
+        if not make_entry("/tmp/.X11-unix", "tmpx11", options="bind,optional 0 0"):
+            raise OSError("Failed to bind tmpx11")
 
     pulse_socket = os.path.join(session["pulse_runtime_path"], "native")
     make_entry(pulse_socket)
