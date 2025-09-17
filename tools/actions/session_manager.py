@@ -40,25 +40,31 @@ def start(args, unlocked_cb=None, background=True):
         return
 
     session = copy.copy(tools.config.session_defaults)
+    if os.environ.get("XDG_SESSION_TYPE") == "wayland":
+        # TODO: also support WAYLAND_SOCKET?
+        wayland_display = session["wayland_display"]
+        if wayland_display == "None" or not wayland_display:
+            logging.warning('WAYLAND_DISPLAY is not set, defaulting to "wayland-0"')
+            wayland_display = session["wayland_display"] = "wayland-0"
 
-    # TODO: also support WAYLAND_SOCKET?
-    wayland_display = session["wayland_display"]
-    if wayland_display == "None" or not wayland_display:
-        logging.warning('WAYLAND_DISPLAY is not set, defaulting to "wayland-0"')
-        wayland_display = session["wayland_display"] = "wayland-0"
-
-    if os.path.isabs(wayland_display):
-        wayland_socket_path = wayland_display
-    else:
-        xdg_runtime_dir = session["xdg_runtime_dir"]
-        if xdg_runtime_dir == "None" or not xdg_runtime_dir:
-            logging.error(f"XDG_RUNTIME_DIR is not set; please don't start a Waydroid session with 'sudo'!")
+        if os.path.isabs(wayland_display):
+            wayland_socket_path = wayland_display
+        else:
+            xdg_runtime_dir = session["xdg_runtime_dir"]
+            if xdg_runtime_dir == "None" or not xdg_runtime_dir:
+                logging.error(f"XDG_RUNTIME_DIR is not set; please don't start a Waydroid session with 'sudo'!")
+                sys.exit(1)
+            wayland_socket_path = os.path.join(xdg_runtime_dir, wayland_display)
+            if not os.path.exists(wayland_socket_path):
+                logging.error(f"Wayland socket '{wayland_socket_path}' doesn't exist; are you running a Wayland compositor?")
+                sys.exit(1)
+    elif os.environ.get("XDG_SESSION_TYPE") == "x11":
+        if not os.path.exists("/tmp/.X11-unix/X0"):
+            logging.error(f"x11 socket /tmp/.X11-unix/X0 doesn't exist; are you running a X11 Server?")
             sys.exit(1)
-        wayland_socket_path = os.path.join(xdg_runtime_dir, wayland_display)
-    if not os.path.exists(wayland_socket_path):
-        logging.error(f"Wayland socket '{wayland_socket_path}' doesn't exist; are you running a Wayland compositor?")
+    else:
+        logging.error(f""+os.environ.get("XDG_SESSION_TYPE") +" is not support, must one of the x11 or wayland")
         sys.exit(1)
-
     waydroid_data = session["waydroid_data"]
     if not os.path.isdir(waydroid_data):
         os.makedirs(waydroid_data)
@@ -109,6 +115,8 @@ def do_stop(args, looper):
     looper.quit()
 
 def stop(args):
+    logging.error("enable x11 keyboard auto repeat.")
+    os.system("xset r on")
     try:
         tools.helpers.ipc.DBusSessionService().Stop()
     except dbus.DBusException:

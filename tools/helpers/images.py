@@ -126,11 +126,20 @@ def make_prop(args, cfg, full_props_path):
     add_prop("openfde.pulse_runtime_path", "pulse_runtime_path")
     add_prop("openfde.wayland_display", "wayland_display")
     add_prop("openfde.background_start", "background_start")
+    add_prop("openfde.x11_display", "x11_display")
+    add_prop("openfde.xmodifiers", "xmodifiers")
     if which("waydroid-sensord") is None:
         props.append("openfde.stub_sensors_hal=1")
     dpi = cfg["lcd_density"]
     if dpi != "0":
         props.append("ro.sf.lcd_density=" + dpi)
+    if cfg["xdg_session_type"] == "x11":
+        logging.warn("xdg_session type is x11")
+        props.append("ro.hardware.hwcomposer=x11")
+    else:
+        logging.warn("xdg_session type is wayland")
+        props.append("ro.hardware.hwcomposer=openfde")
+
 
     props.append("ro.openfde.version=20230318.111310")
     props.append("ro.product.brand=google")

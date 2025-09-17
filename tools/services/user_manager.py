@@ -87,7 +87,7 @@ def start(args, session, unlocked_cb=None):
             appsList = platformService.getAppsInfo()
             for app in appsList:
                 makeDesktopFile(app)
-            multiwin = platformService.getprop("persist.waydroid.multi_windows", "false")
+            multiwin = platformService.getprop("persist.openfde.multi_windows", "false")
             if multiwin == "false":
                 makeWaydroidDesktopFile(False)
             else:

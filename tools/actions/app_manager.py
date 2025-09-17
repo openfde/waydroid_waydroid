@@ -79,7 +79,7 @@ def launch(args):
             #platformService.setprop("openfde.active_apps", args.PACKAGE)
             ret = platformService.launchApp(args.PACKAGE)
             multiwin = platformService.getprop(
-                "persist.waydroid.multi_windows", "false")
+                "persist.openfde.multi_windows", "false")
             if multiwin == "false":
                 platformService.settingsPutString(
                     2, "policy_control", "immersive.status=*")
@@ -142,7 +142,7 @@ def intent(args):
             pkg = ret if ret != "android" else "Openfde"
             platformService.setprop("openfde.active_apps", pkg)
             multiwin = platformService.getprop(
-                "persist.waydroid.multi_windows", "false")
+                "persist.openfde.multi_windows", "false")
             if multiwin == "false":
                 platformService.settingsPutString(
                     2, "policy_control", "immersive.status=*")
