@@ -43,7 +43,7 @@ def getTasks():
             cmdlines = p.cmdline()
             if len(cmdlines) == 0:
                 task["isAndroidApp"] = False
-            elif "." not in cmdlines[0] or "." not in task["name"]:
+            elif "." not in cmdlines[0] and "." not in task["name"]:
                 task["isAndroidApp"] = False
             elif "/" in cmdlines[0]:
                 task["isAndroidApp"] = False
