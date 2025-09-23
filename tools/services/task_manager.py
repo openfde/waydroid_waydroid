@@ -75,15 +75,13 @@ def getIconB64ByTaskName(name: str):
     try:
         icon_path = Path((user_home_path /
                           ".local/share/icons" / name).__str__() + ".png")
-        logging.debug(f"getIconB64 icon path:{icon_path}")
-
         if icon_path.exists():
             b64 = png_encode_base64(icon_path)
             return b64
         else:
             return ""
     except Exception as e:
-        logging.debug(f"getIconB64 error:{e}")
+        logging.error(f"getIconB64 error:{e}")
 
 
 def getTaskPids():
@@ -218,6 +216,8 @@ def start(args):
                 getMemoryAndSwap, getNetworkDownloadAndUpload,
                 getDiskReadAndWrite, getFileSystemUsage, changeTaskPriority)
 
+    global stopping
+    stopping = False
     args.task_manager = threading.Thread(target=service_thread)
     args.task_manager.start()
 
@@ -229,4 +229,4 @@ def stop(args):
         if args.taskManagerLoop:
             args.taskManagerLoop.quit()
     except AttributeError:
-        logging.debug("TaskManager service is not even started")
+        logging.error("TaskManager service is not even started")
