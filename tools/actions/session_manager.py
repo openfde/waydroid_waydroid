@@ -115,8 +115,8 @@ def do_stop(args, looper):
     looper.quit()
 
 def stop(args):
-    logging.error("enable x11 keyboard auto repeat.")
-    os.system("xset r on")
+    if 'DISPLAY' in os.environ:
+        os.system("xset r on")
     try:
         tools.helpers.ipc.DBusSessionService().Stop()
     except dbus.DBusException:
