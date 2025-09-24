@@ -59,4 +59,4 @@ def start(args):
 
 def do_start(args):
   services.task_manager.start(args)
-  service.hardware_manager.start(args)
+  services.hardware_manager.start(args)
