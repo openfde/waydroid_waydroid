@@ -16,7 +16,15 @@ class DbusInfraManager(dbus.service.Object):
 
   @dbus.service.method("com.openfde.InfraManager", in_signature='a{ss}', out_signature='', sender_keyword="sender", connection_keyword="conn")
   def Start(self, session, sender, conn):
-      pass
+      dbus_info = dbus.Interface(conn.get_object("org.freedesktop.DBus", "/org/freedesktop/DBus/Bus", False), "org.freedesktop.DBus")
+      uid = dbus_info.GetConnectionUnixUser(sender)
+      if str(uid) not in ["0", session["user_id"]]:
+        raise RuntimeError("Cannot start a session on behalf of another user")
+      pid = dbus_info.GetConnectionUnixProcessID(sender)
+      if str(uid) != "0" and str(pid) != session["pid"]:
+        raise RuntimeError("Invalid session pid")
+      do_start(self.args)
+
   @dbus.service.method("com.openfde.InfraManager", in_signature='', out_signature='')
   def Stop(self):
      stop(self.args)
@@ -48,3 +56,7 @@ def start(args):
   services.task_manager.start(args)
   services.hardware_manager.start(args)
   service(args, mainloop)
+
+def do_start(args):
+  services.task_manager.start(args)
+  service.hardware_manager.start(args)
