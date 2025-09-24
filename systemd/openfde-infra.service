@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenFDE ifnrastructure
+Description=OpenFDE infrastructure
 
 [Service]
 BusName=com.openfde.Infra
