@@ -122,6 +122,10 @@ def do_stop(args, looper):
     services.clipboard_manager.stop(args)
     services.net_manager.stop(args)
     services.task_manager.stop(args)
+    try:
+        tools.helpers.ipc.DBusInfraService().Stop()
+    except dbus.DBusException:
+        pass
     looper.quit()
 
 def stop(args):
