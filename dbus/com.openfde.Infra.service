@@ -1,0 +1,5 @@
+[D-BUS Service]
+Name=com.openfde.Infra
+Exec=/usr/bin/waydroid infra start
+User=root
+SystemdService=openfde-infra.service

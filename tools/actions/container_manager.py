@@ -124,8 +124,6 @@ def start(args):
 
         GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGINT, sigint_handler, None)
         GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGTERM, sigint_handler, None)
-        
-        services.task_manager.start(args)
         service(args, mainloop)
 
     else:
@@ -181,8 +179,6 @@ def do_start(args, session):
     helpers.protocol.set_aidl_version(args)
 
     helpers.lxc.start(args)
-    services.hardware_manager.start(args)
-
     args.session = session
 
 def stop(args, quit_session=True):

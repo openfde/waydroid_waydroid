@@ -8,3 +8,4 @@ from tools.actions.app_manager import install, remove, launch, list
 from tools.actions.notification import notify
 from tools.actions.status import print_status
 from tools.actions.prop import get, set
+from tools.actions.infra import start, stop

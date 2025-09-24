@@ -128,6 +128,12 @@ def arguments_shell(subparser):
     ret.add_argument('COMMAND', nargs='*', help="command to run")
     return ret
 
+def arguments_infra(subparser):
+    ret = subparser.add_parser("infra", help="start infra service")
+    sub = ret.add_subparsers(title="subaction", dest="subaction")
+    application = sub.add_parser("start", help="start infra service")
+    return ret
+
 def arguments_logcat(subparser):
     ret = subparser.add_parser("logcat", help="show android logcat")
     return ret
@@ -164,6 +170,7 @@ def arguments():
     arguments_session(sub)
     arguments_container(sub)
     arguments_app(sub)
+    arguments_infra(sub)
     arguments_notify(sub)
     arguments_prop(sub)
     arguments_fullUI(sub)

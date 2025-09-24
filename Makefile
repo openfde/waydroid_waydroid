@@ -36,14 +36,17 @@ install:
 	mv $(INSTALL_WAYDROID_DIR)/data/*.desktop $(INSTALL_APPS_DIR)
 	mv $(INSTALL_WAYDROID_DIR)/data/*.metainfo.xml $(INSTALL_METAINFO_DIR)
 	cp dbus/id.waydro.Container.conf $(INSTALL_DBUS_DIR)/system.d/
+	cp dbus/com.openfde.Infra.conf $(INSTALL_DBUS_DIR)/system.d/
 	cp dbus/id.waydro.Container.policy $(INSTALL_POLKIT_DIR)/actions/
 	if [ $(USE_DBUS_ACTIVATION) = 1 ]; then \
 		install -d $(INSTALL_DBUS_DIR)/system-services; \
 		cp dbus/id.waydro.Container.service $(INSTALL_DBUS_DIR)/system-services/; \
+		cp dbus/com.openfde.Infra.service $(INSTALL_DBUS_DIR)/system-services/; \
 	fi
 	if [ $(USE_SYSTEMD) = 1 ]; then \
 		install -d $(INSTALL_SYSD_DIR); \
 		cp systemd/waydroid-container.service $(INSTALL_SYSD_DIR); \
+		cp systemd/openfde-infra.service $(INSTALL_SYSD_DIR); \
 	fi
 	if [ $(USE_NFTABLES) = 1 ]; then \
 		sed '/LXC_USE_NFT=/ s/false/true/' -i $(INSTALL_WAYDROID_DIR)/data/scripts/waydroid-net.sh; \

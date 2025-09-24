@@ -65,6 +65,9 @@ def main():
         elif args.action == "upgrade":
             actionNeedRoot(args.action)
             actions.upgrade(args)
+        elif args.action == "infra":
+            actionNeedRoot(args.action)
+            actions.infra.start(args)
         elif args.action == "session":
             if args.subaction == "start":
                 actions.session_manager.start(args)

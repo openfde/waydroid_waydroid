@@ -1,0 +1,9 @@
+[Unit]
+Description=OpenFDE ifnrastructure
+
+[Service]
+BusName=com.openfde.Infra
+ExecStart=/usr/bin/waydroid infra start
+
+[Install]
+WantedBy=multi-user.target

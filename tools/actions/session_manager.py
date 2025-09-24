@@ -102,6 +102,16 @@ def start(args, unlocked_cb=None, background=True):
             logging.error("WayDroid container is not listening")
         sys.exit(0)
 
+    try:
+        tools.helpers.ipc.DBusInfraService().Start(session)
+    except dbus.DBusException as e:
+        logging.debug(e)
+        if e.get_dbus_name().startswith("org.freedesktop.DBus.Python"):
+            logging.error(e.get_dbus_message().splitlines()[-1])
+        else:
+            logging.error("Openfde infra is not listening")
+        sys.exit(0)
+
     services.user_manager.start(args, session, unlocked_cb)
     services.clipboard_manager.start(args)
     services.net_manager.start(args)
