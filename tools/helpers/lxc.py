@@ -293,6 +293,8 @@ def make_base_props(args):
     props.append("ro.hardware.gralloc=" + gralloc)
     if gralloc == "LEOPARD":
         props.append("ro.sf.lcd_density=220")
+    else:
+        props.append("ro.sf.lcd_density=160")
 
     if egl != "":
         props.append("ro.hardware.egl=" + egl)
