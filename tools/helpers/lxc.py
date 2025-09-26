@@ -291,6 +291,8 @@ def make_base_props(args):
             egl = "swiftshader"
         props.append("debug.stagefright.ccodec=0")
     props.append("ro.hardware.gralloc=" + gralloc)
+    if gralloc == "LEOPARD":
+        props.append("ro.sf.lcd_density=220")
 
     if egl != "":
         props.append("ro.hardware.egl=" + egl)
