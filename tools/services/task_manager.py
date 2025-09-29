@@ -20,39 +20,65 @@ for p in pwd.getpwall():
         user_home_path = Path(p.pw_dir)
         user_name = p.pw_name
 
-
-def getTasks():
-    tasks: List[dict] = []
-    for p in psutil.process_iter(['pid', 'name',
-                                         'username', 'memory_percent', 'cpu_percent', "nice"]):
-        try:
-            task = {}
-            task["name"] = p.name()
-            task["user"] = p.username()
-            task["vmsize"] = p.memory_info().vms
-            task["cpuUsage"] = p.cpu_percent()
-            task["pid"] = p.pid
-            task["rss"] = p.memory_info().rss
-            io_counters = p.io_counters()
-            task["readIssued"] = io_counters.read_count
-            task["writeIssued"] = io_counters.write_count
-            task["readBytes"] = io_counters.read_bytes
-            task["writeBytes"] = io_counters.write_bytes
-            task["nice"] = p.nice()
+def getTaskDict(p):
+    try:
+        task = {}
+        task["name"] = p.name()
+        task["user"] = p.username()
+        task["vmsize"] = p.memory_info().vms
+        task["cpuUsage"] = p.cpu_percent()
+        task["pid"] = p.pid
+        task["rss"] = p.memory_info().rss
+        io_counters = p.io_counters()
+        task["readIssued"] = io_counters.read_count
+        task["writeIssued"] = io_counters.write_count
+        task["readBytes"] = io_counters.read_bytes
+        task["writeBytes"] = io_counters.write_bytes
+        task["nice"] = p.nice()
+        task["isAndroidApp"] = False
+        cmdlines = p.cmdline()
+        if len(cmdlines) == 0:
             task["isAndroidApp"] = False
-            cmdlines = p.cmdline()
-            if len(cmdlines) == 0:
-                task["isAndroidApp"] = False
-            elif "." not in cmdlines[0] and "." not in task["name"]:
-                task["isAndroidApp"] = False
-            elif "/" in cmdlines[0]:
-                task["isAndroidApp"] = False
-            elif task["name"] in cmdlines[0]:
-                task["isAndroidApp"] = True
-                task["name"] = cmdlines[0]
-            tasks.append(task)
+        elif "." not in cmdlines[0] and "." not in task["name"]:
+            task["isAndroidApp"] = False
+        elif "/" in cmdlines[0]:
+            task["isAndroidApp"] = False
+        elif task["name"] in cmdlines[0]:
+            task["isAndroidApp"] = True
+            task["name"] = cmdlines[0]
+        return task
+    except psutil.NoSuchProcess:
+        return None
+
+processes_cache = list()
+def getTasks():
+    process_pids = set()
+    tasks = []
+    active_processes = []
+    for p in processes_cache:
+        try:
+            process_pids.add(p.pid)
+            task_dict = getTaskDict(p)
+            if task_dict is not None:
+                tasks.append(task_dict)
+                active_processes.append(p)
         except psutil.NoSuchProcess:
+            pass
+    
+    processes_cache[:] = active_processes
+
+    for p in psutil.process_iter(['pid', 'name',
+    'username', 'memory_percent', 'cpu_percent', "nice"]):
+        if p.pid in process_pids:
             continue
+        try:
+            task_dict = getTaskDict(p)
+            if task_dict is not None:
+                tasks.append(task_dict)
+                processes_cache.append(p)
+        except psutil.NoSuchProcess:
+            pass
+    
     return tasks
 
 
