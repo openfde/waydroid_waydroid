@@ -126,6 +126,8 @@ def generate_nodes_lxc_config(args):
     make_entry("/etc/hosts","system/etc/hosts", options="bind,optional 0 0")
     #cpuinfo
     make_entry("/usr/lib/waydroid/data/configs/cpuinfo","proc/cpuinfo", options="bind,optional 0 0")
+    #camera
+    make_entry("/dev", "dev/camera", options="rbind,create=dir,optional 0 0")
 
     return nodes
 
