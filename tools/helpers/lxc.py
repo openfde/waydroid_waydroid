@@ -307,9 +307,9 @@ def make_base_props(args):
             elif vulkan == "ranchu":
                 gralloc = "ranchu"
                 egl = "emulation"
-            elif vulkan == "LEOPARD":
-                gralloc = "LEOPARD"
-                egl = "LEOPARD"
+            elif vulkan == "FTG340":
+                gralloc = "FTG340"
+                egl = "FTG340"
             else :
                 if vulkan == "":
                     gralloc = "default"
@@ -324,7 +324,7 @@ def make_base_props(args):
     props.append("ro.hardware.gralloc=" + gralloc)
     if gralloc == "ft2004" or vulkan == "virtio" or gralloc == "default" :
         props.append("fde.systemui.blurlevel=1")
-    if gralloc == "LEOPARD":
+    if gralloc == "FTG340":
         props.append("ro.sf.lcd_density=220")
     else:
         props.append("ro.sf.lcd_density=160")
