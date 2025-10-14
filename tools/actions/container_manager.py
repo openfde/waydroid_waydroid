@@ -183,7 +183,6 @@ def do_start(args, session):
 
 def stop(args, quit_session=True):
     try:
-        services.hardware_manager.stop(args)
         status = helpers.lxc.status(args)
         if status != "STOPPED":
             helpers.lxc.stop(args)

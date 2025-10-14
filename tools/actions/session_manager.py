@@ -121,16 +121,15 @@ def do_stop(args, looper):
     services.user_manager.stop(args)
     services.clipboard_manager.stop(args)
     services.net_manager.stop(args)
-    services.task_manager.stop(args)
-    try:
-        tools.helpers.ipc.DBusInfraService().Stop()
-    except dbus.DBusException:
-        pass
     looper.quit()
 
 def stop(args):
     if 'DISPLAY' in os.environ:
         os.system("xset r on")
+    try:
+        tools.helpers.ipc.DBusInfraService().Stop()
+    except dbus.DBusException:
+        pass
     try:
         tools.helpers.ipc.DBusSessionService().Stop()
     except dbus.DBusException:
