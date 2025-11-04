@@ -330,6 +330,10 @@ def make_base_props(args):
         props.append("ro.sf.lcd_density=160")
     if egl != "":
         props.append("ro.hardware.egl=" + egl)
+    if os.path.isfile("/etc/fde.d/fde.conf"):
+        share_shortcut = tools.helpers.props.file_get(args,"/etc/fde.d/fde.conf","share_shortcut")
+        if share_shortcut == "false":
+            props.append("fde.app_fusion=0")
 
     media_profiles = tools.helpers.props.host_get(args, "media.settings.xml")
     if media_profiles != "":
