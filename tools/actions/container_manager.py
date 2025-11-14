@@ -39,7 +39,7 @@ class DbusContainerManager(dbus.service.Object):
                     if line.startswith("ro.hardware.gralloc="):
                         gralloc_value = line.strip().split("=", 1)[1]
                         break
-        if gralloc_value == "LEOPARD":
+        if gralloc_value == "FTG340":
             devfreq_path = "/sys/class/devfreq/"
             for dev in os.listdir(devfreq_path):
                 governor_path = os.path.join(devfreq_path, dev, "governor")
