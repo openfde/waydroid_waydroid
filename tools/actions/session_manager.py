@@ -68,6 +68,8 @@ def start(args, unlocked_cb=None, background=True):
     waydroid_data = session["waydroid_data"]
     if not os.path.isdir(waydroid_data):
         os.makedirs(waydroid_data)
+
+    if not os.path.isdir(waydroid_data_icons):
         os.makedirs(waydroid_data_icons)
 
     dpi = tools.helpers.props.host_get(args, "ro.sf.lcd_density")
