@@ -69,6 +69,7 @@ def start(args, unlocked_cb=None, background=True):
     if not os.path.isdir(waydroid_data):
         os.makedirs(waydroid_data)
 
+    waydroid_data_icons = session["waydroid_data_icons"]
     if not os.path.isdir(waydroid_data_icons):
         os.makedirs(waydroid_data_icons)
 
