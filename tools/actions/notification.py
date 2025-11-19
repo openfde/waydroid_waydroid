@@ -14,7 +14,6 @@ def notify(args,tp):
     try:
         notificationService = INotification.get_service(args)
         if notificationService:
-            logging.info(args.PATH)
             if tp == "desktop":
                 notificationService.desktop_notify(args.PATH)
             elif tp == "application":
