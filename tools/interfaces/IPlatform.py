@@ -206,12 +206,13 @@ class IPlatform:
             if exception != 0:
                 logging.error("Failed with code: {}".format(exception))         
 
-    def compatbileGet(self, arg1,arg2):
+    def compatbileGet(self, arg1,arg2,arg3):
         request = self.client.new_request()
         request.append_string16(arg1)
         request.append_string16(arg2)
+        request.append_string16(arg3)
         reply, status = self.client.transact_sync_reply(
-            TRANSACTION_compatible_get, request)
+            TRANSACTION_compatbileGet, request)
 
         if status:
             logging.error("Sending reply failed")
@@ -226,13 +227,14 @@ class IPlatform:
 
         return None 
 
-    def compatbileSet(self, arg1,arg2,arg3):
+    def compatbileSet(self, arg1,arg2,arg3,arg4):
         request = self.client.new_request()
         request.append_string16(arg1)
         request.append_string16(arg2)
         request.append_string16(arg3)
+        request.append_string16(arg4)
         reply, status = self.client.transact_sync_reply(
-            TRANSACTION_compatible_set, request)
+            TRANSACTION_compatbileSet, request)
 
         if status:
             logging.error("Sending reply failed")
