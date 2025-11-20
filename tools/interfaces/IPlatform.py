@@ -140,9 +140,10 @@ class IPlatform:
 
         return None
 
-    def installApp(self, arg1):
+    def installApp(self, arg1, arg2):
         request = self.client.new_request()
         request.append_string16(arg1)
+        request.append_string16(arg2)
         reply, status = self.client.transact_sync_reply(
             TRANSACTION_installApp, request)
 
