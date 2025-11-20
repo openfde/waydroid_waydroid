@@ -104,11 +104,13 @@ def arguments_config(subparser):
     sub = ret.add_subparsers(title="subaction", dest="subaction")
     get = sub.add_parser("get", help="compatbile-get of application")
     get.add_argument('PACKAGE', help="package name of app to compatbile-get")  
+    get.add_argument('ACTIVITYNAME', help="activity name of app to compatbile-get")
     get.add_argument('KEYCODE', help="keycode name of app to compatbile-get")       
     set = sub.add_parser("set", help="compatbile-get for application")
-    set.add_argument('PACKAGE', help="package name of app to compatbile-get")  
-    set.add_argument('KEYCODE', help="keycode name of app to compatbile-get")  
-    set.add_argument('VALUE', help="value name of app to compatbile-get")    
+    set.add_argument('PACKAGE', help="package name of app to compatbile-set")  
+    set.add_argument('ACTIVITYNAME', help="activity name of app to compatbile-set")
+    set.add_argument('KEYCODE', help="keycode name of app to compatbile-set")  
+    set.add_argument('VALUE', help="value name of app to compatbile-set")    
 
 def arguments_prop(subparser):
     ret = subparser.add_parser("prop", help="android properties controller")
