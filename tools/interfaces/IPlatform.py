@@ -192,39 +192,55 @@ class IPlatform:
             if exception != 0:
                 logging.error("Failed with code: {}".format(exception))
 
-    def stop(args):
-        def justLaunch():
-            platformService = IPlatform.get_service(args)
-            if platformService:
-                #openfde only use single window, no need to update waydroid.active_apps 
-                ret = platformService.stopApp(args.PACKAGE)
-            
-            else:
-                logging.error("Failed to access IPlatform service")
-        maybeLaunchLater(args, justLaunch)   
+     def stopApp(self, arg1):
+        request = self.client.new_request()
+        request.append_string16(arg1)
+        reply, status = self.client.transact_sync_reply(
+            TRANSACTION_stopApp, request)
 
-    def compatbile_get(args):
-        def justLaunch():
-            platformService = IPlatform.get_service(args)
-            if platformService:
-                #openfde only use single window, no need to update waydroid.active_apps 
-                ret = platformService.compatbileGet(args.PACKAGE,args.KEYCODE)
-                print("\t" + ret)
-            else:
-                logging.error("Failed to access IPlatform service")
-        maybeLaunchLater(args, justLaunch)   
+        if status:
+            logging.error("Sending reply failed")
+        else:
+            reader = reply.init_reader()
+            status, exception = reader.read_int32()
+            if exception != 0:
+                logging.error("Failed with code: {}".format(exception))         
 
-    def compatbile_set(args):
-        def justLaunch():
-            platformService = IPlatform.get_service(args)
-            if platformService:
-                #openfde only use single window, no need to update waydroid.active_apps 
-                ret = platformService.compatbileSet(args.PACKAGE,args.KEYCODE,args.VALUE)
-                print("set success" )
-            
+    def compatbileGet(self, arg1,arg2):
+        request = self.client.new_request()
+        request.append_string16(arg1)
+        request.append_string16(arg2)
+        reply, status = self.client.transact_sync_reply(
+            TRANSACTION_compatible_get, request)
+
+        if status:
+            logging.error("Sending reply failed")
+        else:
+            reader = reply.init_reader()
+            status, exception = reader.read_int32()
+            if exception == 0:
+                rep1 = reader.read_string16()
+                return rep1
             else:
-                logging.error("Failed to access IPlatform service")
-        maybeLaunchLater(args, justLaunch)                   
+                logging.error("Failed with code: {}".format(exception))
+
+        return None 
+
+    def compatbileSet(self, arg1,arg2,arg3):
+        request = self.client.new_request()
+        request.append_string16(arg1)
+        request.append_string16(arg2)
+        request.append_string16(arg3)
+        reply, status = self.client.transact_sync_reply(
+            TRANSACTION_compatible_set, request)
+
+        if status:
+            logging.error("Sending reply failed")
+        else:
+            reader = reply.init_reader()
+            status, exception = reader.read_int32()
+            if exception != 0:
+                logging.error("Failed with code: {}".format(exception))                       
 
     def launchIntent(self, arg1, arg2):
         request = self.client.new_request()
