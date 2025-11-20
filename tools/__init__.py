@@ -113,9 +113,19 @@ def main():
                 actions.app_manager.intent(args)
             elif args.subaction == "list":
                 actions.app_manager.list(args)
+            elif args.subaction == "stop":
+                actions.app_manager.stop(args)        
             else:
                 logging.info(
                     "Run waydroid {} -h for usage information.".format(args.action))
+        elif args.action == "compatbile-config":
+            if args.subaction == "get":
+                actions.app_manager.compatbile_get(args)
+            elif args.subaction == "set":
+                actions.app_manager.compatbile_set(args)
+            else:
+                logging.info(
+                    "Run waydroid {} -h for usage information.".format(args.action))             
         elif args.action == "prop":
             if args.subaction == "get":
                 actions.prop.get(args)

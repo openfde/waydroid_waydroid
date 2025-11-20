@@ -22,6 +22,11 @@ TRANSACTION_settingsGetString = 10
 TRANSACTION_settingsPutInt = 11
 TRANSACTION_settingsGetInt = 12
 TRANSACTION_launchIntent = 13
+TRANSACTION_commitText = 14
+TRANSACTION_sendKeyEventt = 15
+TRANSACTION_stopApp = 16
+TRANSACTION_compatbileGet = 17
+TRANSACTION_compatbileSet = 18
 
 class IPlatform:
     def __init__(self, remote):
@@ -186,6 +191,40 @@ class IPlatform:
             status, exception = reader.read_int32()
             if exception != 0:
                 logging.error("Failed with code: {}".format(exception))
+
+    def stop(args):
+        def justLaunch():
+            platformService = IPlatform.get_service(args)
+            if platformService:
+                #openfde only use single window, no need to update waydroid.active_apps 
+                ret = platformService.stopApp(args.PACKAGE)
+            
+            else:
+                logging.error("Failed to access IPlatform service")
+        maybeLaunchLater(args, justLaunch)   
+
+    def compatbile_get(args):
+        def justLaunch():
+            platformService = IPlatform.get_service(args)
+            if platformService:
+                #openfde only use single window, no need to update waydroid.active_apps 
+                ret = platformService.compatbileGet(args.PACKAGE,args.KEYCODE)
+                print("\t" + ret)
+            else:
+                logging.error("Failed to access IPlatform service")
+        maybeLaunchLater(args, justLaunch)   
+
+    def compatbile_set(args):
+        def justLaunch():
+            platformService = IPlatform.get_service(args)
+            if platformService:
+                #openfde only use single window, no need to update waydroid.active_apps 
+                ret = platformService.compatbileSet(args.PACKAGE,args.KEYCODE,args.VALUE)
+                print("set success" )
+            
+            else:
+                logging.error("Failed to access IPlatform service")
+        maybeLaunchLater(args, justLaunch)                   
 
     def launchIntent(self, arg1, arg2):
         request = self.client.new_request()
