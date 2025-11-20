@@ -192,7 +192,7 @@ class IPlatform:
             if exception != 0:
                 logging.error("Failed with code: {}".format(exception))
 
-     def stopApp(self, arg1):
+    def stopApp(self, arg1):
         request = self.client.new_request()
         request.append_string16(arg1)
         reply, status = self.client.transact_sync_reply(

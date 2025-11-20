@@ -183,6 +183,7 @@ def arguments():
     arguments_session(sub)
     arguments_container(sub)
     arguments_app(sub)
+    arguments_config(sub)
     arguments_infra(sub)
     arguments_notify(sub)
     arguments_prop(sub)
