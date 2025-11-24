@@ -97,27 +97,64 @@ def start(args, session, unlocked_cb=None):
             unlocked_cb()
 
     def packageStateChanged(mode, packageName, uid):
-        logging.debug("packageStateChanged")
-        """
+        logging.debug("packageStateChanged mode: {}, packageName: {}".format(mode, packageName))
+        
         platformService = IPlatform.get_service(args)
         if platformService:
-            appInfo = platformService.getAppInfo(packageName)
-            desktop_file_path = apps_dir + "/waydroid." + packageName + ".desktop"
-            if mode == 0:
-                # Package added
-                makeDesktopFile(appInfo)
-            elif mode == 1:
-                if os.path.isfile(desktop_file_path):
-                    os.remove(desktop_file_path)
+            multiwin = platformService.getprop(
+                "persist.waydroid.multi_windows", "false")
+            if multiwin == "false":
+                return
+            if mode == 3:
+                package_info = json.dumps({"PackageName": packageName, "OpCode":"start","Status":"Success"})
+                cmd = ['fde_ctrl', '-msg', package_info]
+                threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
+            elif mode == 4:
+                package_info = json.dumps({"PackageName": packageName, "OpCode":"stop","Status":"Success"})
+                cmd = ['fde_ctrl', '-msg', package_info]
+                threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
             else:
-                if os.path.isfile(desktop_file_path):
-                    if makeDesktopFile(appInfo) == -1:
+                appInfo = platformService.getAppInfo(packageName)
+                desktop_file_path = apps_dir + "/waydroid." + packageName + ".desktop"
+                if mode == 0:
+                    # Package added
+                    makeDesktopFile(appInfo)
+                elif mode == 1:
+                    package_info = json.dumps({"PackageName": packageName, "OpCode":"remove","Status":"Success"})
+                    cmd = ['fde_ctrl', '-msg', package_info]
+                    threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
+                    if os.path.isfile(desktop_file_path):
                         os.remove(desktop_file_path)
-        """
+                else:
+                    if os.path.isfile(desktop_file_path):
+                        if makeDesktopFile(appInfo) == -1:
+                            os.remove(desktop_file_path)
+
+    def packageStateChangedHasVernsion(mode, packageName,version, uid):
+        if('###' in version) :
+            arrRes = version.split('###')
+            code = arrRes[0]
+            msg = arrRes[1]
+            logging.debug("packageAdditionFailed  packageName: "+packageName + ",msg: "+msg + ",code: "+code)
+            package_info = json.dumps({"PackageName": packageName, "Version": version,"OpCode":"install","Status":"Failed","FailedMsg":msg})
+            cmd = ['fde_ctrl', '-msg', package_info]
+            threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
+        else:
+            logging.debug("packageAdd success  packageName: "+packageName + ",version: "+version)   
+            package_info = json.dumps({"PackageName": packageName, "Version": version,"OpCode":"install","Status":"Success"})
+            cmd = ['fde_ctrl', '-msg', package_info]
+            threading.Thread(target=lambda: subprocess.run(cmd, check=False)).start()
+            platformService = IPlatform.get_service(args)
+            if platformService:
+                multiwin = platformService.getprop("persist.waydroid.multi_windows", "false")
+                if multiwin == "true":
+                    # Package added
+                    appInfo = platformService.getAppInfo(packageName)
+                    makeDesktopFile(appInfo)                        
 
     def service_thread():
         while not stopping:
-            IUserMonitor.add_service(args, userUnlocked, packageStateChanged)
+            IUserMonitor.add_service(args, userUnlocked, packageStateChanged, packageStateChangedHasVernsion)
 
     global stopping
     stopping = False

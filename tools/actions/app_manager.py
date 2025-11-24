@@ -27,7 +27,7 @@ def install(args):
         shutil.copyfile(args.PACKAGE, tmp_dir + "/base.apk")
         platformService = IPlatform.get_service(args)
         if platformService:
-            platformService.installApp("/data/waydroid_tmp/base.apk")
+            platformService.installApp("/data/waydroid_tmp/base.apk",args.PACKAGE)
         else:
             logging.error("Failed to access IPlatform service")
         os.remove(tmp_dir + "/base.apk")
@@ -89,6 +89,41 @@ def launch(args):
         else:
             logging.error("Failed to access IPlatform service")
     maybeLaunchLater(args, justLaunch)
+
+def stop(args):
+    def justLaunch():
+        platformService = IPlatform.get_service(args)
+        if platformService:
+            #openfde only use single window, no need to update waydroid.active_apps 
+            ret = platformService.stopApp(args.PACKAGE)
+           
+        else:
+            logging.error("Failed to access IPlatform service")
+    maybeLaunchLater(args, justLaunch)   
+
+def compatbile_get(args):
+    def justLaunch():
+        platformService = IPlatform.get_service(args)
+        if platformService:
+            #openfde only use single window, no need to update waydroid.active_apps 
+            ret = platformService.compatbileGet(args.PACKAGE,args.ACTIVITY,args.KEYCODE)
+            print("\t" + ret)
+        else:
+            logging.error("Failed to access IPlatform service")
+    maybeLaunchLater(args, justLaunch)   
+
+def compatbile_set(args):
+    def justLaunch():
+        platformService = IPlatform.get_service(args)
+        if platformService:
+            #openfde only use single window, no need to update waydroid.active_apps 
+            ret = platformService.compatbileSet(args.PACKAGE,args.ACTIVITY,args.KEYCODE,args.VALUE)
+            print("set success" )
+           
+        else:
+            logging.error("Failed to access IPlatform service")
+    maybeLaunchLater(args, justLaunch)       
+
 
 def list(args):
     try:
