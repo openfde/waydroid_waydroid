@@ -154,7 +154,7 @@ def start(args, session, unlocked_cb=None):
 
     def service_thread():
         while not stopping:
-            IUserMonitor.add_service(args, userUnlocked, packageStateChanged)
+            IUserMonitor.add_service(args, userUnlocked, packageStateChanged, packageStateChangedHasVernsion)
 
     global stopping
     stopping = False
