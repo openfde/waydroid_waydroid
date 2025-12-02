@@ -325,7 +325,7 @@ def make_base_props(args):
     if gralloc == "ft2004" or vulkan == "virtio" or gralloc == "default" :
         props.append("fde.systemui.blurlevel=1")
     if gralloc == "FTG340":
-        props.append("ro.sf.lcd_density=220")
+        props.append("ro.sf.lcd_density=256")
     else:
         props.append("ro.sf.lcd_density=160")
     if egl != "":
