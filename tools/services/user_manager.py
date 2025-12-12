@@ -8,6 +8,7 @@ import tools.config
 import tools.helpers.net
 from tools.interfaces import IUserMonitor
 from tools.interfaces import IPlatform
+from tools.helpers.personal_dirs import get_personal_dirs
 
 stopping = False
 
@@ -73,6 +74,7 @@ def start(args, session, unlocked_cb=None):
             response = requests.post(url)
             logging.info("Android with user {} is ready, post fs fusing".format(uid))
             response.raise_for_status()  # Raise an exception if the request was unsuccessful
+            tools.helpers.ipc.DBusInfraService().Monitor(get_personal_dirs())
         except requests.exceptions.RequestException as e:
             logging.warning("post fs_fuing failed")
 

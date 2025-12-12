@@ -20,7 +20,6 @@ def notify(args,tp):
                 notificationService.application_notify(args.PATH)
         else:
             logging.error("Failed to access INotification service")
-            cm.Freeze()
     except :
         logging.error("WayDroid session is stopped")
 

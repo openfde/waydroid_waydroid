@@ -1,10 +1,13 @@
 from tools import services
 import dbus
 import dbus.service
+import multiprocessing
 import dbus.exceptions
 from gi.repository import GLib
 import logging
 import signal
+from tools.helpers.inotify import InotifyRecursiveWatcher
+import threading
 
 
 
@@ -29,6 +32,59 @@ class DbusInfraManager(dbus.service.Object):
   def Stop(self):
      stop(self.args)
 
+  @dbus.service.method("com.openfde.InfraManager", in_signature='a{ss}', out_signature='')
+  def Monitor(self, rootDirDict):
+      # 监听 rootDirDict 的所有 value
+      if not hasattr(self, "_watchers"):
+        self._watchers = []
+      if not hasattr(self, "_watcher_threads"):
+        self._watcher_threads = []
+      for rootDir in set(rootDirDict.values()):
+        if not rootDir:
+          continue
+        try:
+          logging.info("inotify watcher "+rootDir)
+          watcher = InotifyRecursiveWatcher(rootDir)
+          t = threading.Thread(
+            target=watcher.run,
+            name=f"watcher-thread-{abs(hash(rootDir))}",
+            daemon=False,
+          )
+          t.start()
+          self._watchers.append(watcher)
+          self._watcher_threads.append(t)
+        except Exception:
+          logging.exception("Failed to start watcher for %s", rootDir)
+
+  @dbus.service.method("com.openfde.InfraManager", in_signature='', out_signature='')
+  def StopMonitor(self):
+      stopMonitor(self)
+
+
+def stopMonitor(self):
+      logging.info("stop monitor")
+      try:
+        if hasattr(self, "_watchers"):
+          for w in self._watchers:
+            try:
+              if hasattr(w, "stop"):
+                w.stop()
+              elif hasattr(w, "close"):
+                w.close()
+            except Exception:
+              logging.exception("Failed to stop watcher")
+          self._watchers.clear()
+        if hasattr(self, "_watcher_threads"):
+          for t in self._watcher_threads:
+            try:
+              if t.is_alive():
+                t.join(timeout=1)
+            except Exception:
+              logging.exception("Failed to join watcher thread")
+          self._watcher_threads.clear()
+      except Exception:
+        logging.exception("Failed to stop monitors")
+
 def service(args, looper):
   dbus_obj = DbusInfraManager(looper, dbus.SystemBus(), '/InfraManager', args)
   looper.run()
@@ -36,6 +92,9 @@ def service(args, looper):
 def stop(args, quit_session=True):
   try:
       services.hardware_manager.stop(args)
+  except:
+      pass
+  try:
       services.task_manager.stop(args)
   except:
       pass
