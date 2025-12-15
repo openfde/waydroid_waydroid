@@ -8,12 +8,12 @@ from typing import Dict
 
 # Default directories (English XDG defaults)
 _DEFAULTS = {
-  "DESKTOP": os.path.expanduser("~/Desktop"),
-  "DOWNLOAD": os.path.expanduser("~/Downloads"),
-  "DOCUMENTS": os.path.expanduser("~/Documents"),
-  "MUSIC": os.path.expanduser("~/Music"),
-  "PICTURES": os.path.expanduser("~/Pictures"),
-  "VIDEOS": os.path.expanduser("~/Videos"),
+  "Desktop": os.path.expanduser("~/Desktop"),
+  "Download": os.path.expanduser("~/Downloads"),
+  "Documents": os.path.expanduser("~/Documents"),
+  "Music": os.path.expanduser("~/Music"),
+  "Pictures": os.path.expanduser("~/Pictures"),
+  "Movies": os.path.expanduser("~/Videos"),
 }
 
 _USER_DIRS_PATH = os.path.expanduser("~/.config/user-dirs.dirs")
@@ -73,9 +73,12 @@ def get_personal_dirs() -> Dict[str, str]:
   out = dict(_DEFAULTS)  # start from defaults
   for key in ("MUSIC", "PICTURES", "DESKTOP", "DOWNLOAD", "DOCUMENTS", "VIDEOS"):
     if key in parsed:
-      out[key] = parsed[key]
-      if not os.path.isdir(out[key]):
-        mkdir_if_not_exists(out[key])
+      outKey = key[:1].upper() + key[1:].lower()
+      if key == "VIDEOS":
+        outKey = "Movies"
+      out[outKey] = parsed[key]
+      if not os.path.isdir(out[outKey]):
+        mkdir_if_not_exists(out[outKey])
   return out
 
 def mkdir_if_not_exists(path: str):
@@ -91,5 +94,8 @@ def mkdir_if_not_exists(path: str):
 if __name__ == "__main__":
   # Example usage: print the mapping
   dirs = get_personal_dirs()
-  for k in ("MUSIC", "PICTURES", "DESKTOP", "DOWNLOAD", "DOCUMENTS", "VIDEOS"):
-    print(f"{k}: {dirs[k]}")
+if __name__ == "__main__":
+  # Example usage: print the mapping
+  dirs = get_personal_dirs()
+  for k, v in dirs.items():
+    print(f"{k}: {v}")

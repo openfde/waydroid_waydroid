@@ -39,12 +39,12 @@ class DbusInfraManager(dbus.service.Object):
         self._watchers = []
       if not hasattr(self, "_watcher_threads"):
         self._watcher_threads = []
-      for rootDir in set(rootDirDict.values()):
-        if not rootDir:
+      for key, rootDir in rootDirDict.items():
+        if not key or not rootDir:
           continue
         try:
-          logging.info("inotify watcher "+rootDir)
-          watcher = InotifyRecursiveWatcher(rootDir)
+          logging.info(f"inotify watcher key={key} path={rootDir}")
+          watcher = InotifyRecursiveWatcher(rootDir,key)
           t = threading.Thread(
             target=watcher.run,
             name=f"watcher-thread-{abs(hash(rootDir))}",
