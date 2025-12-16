@@ -35,6 +35,7 @@ install:
 	ln -sf $(WAYDROID_DIR)/data/AppIcon.png $(INSTALL_ICONS_DIR)/hicolor/512x512/apps/waydroid.png
 	mv $(INSTALL_WAYDROID_DIR)/data/*.desktop $(INSTALL_APPS_DIR)
 	mv $(INSTALL_WAYDROID_DIR)/data/*.metainfo.xml $(INSTALL_METAINFO_DIR)
+	mv $(INSTALL_WAYDROID_DIR)/data/configs/99-hide-android-apex-loops.rules /etc/udev/rules.d/
 	cp dbus/id.waydro.Container.conf $(INSTALL_DBUS_DIR)/system.d/
 	cp dbus/com.openfde.Infra.conf $(INSTALL_DBUS_DIR)/system.d/
 	cp dbus/id.waydro.Container.policy $(INSTALL_POLKIT_DIR)/actions/

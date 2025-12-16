@@ -1,0 +1,1 @@
+ACTION=="add|change|existing", KERNEL=="loop*", ATTR{loop/backing_file}=="*\.apex*", ENV{UDISKS_IGNORE}="1", OPTIONS+="nowatch"
