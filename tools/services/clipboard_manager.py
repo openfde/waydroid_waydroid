@@ -6,14 +6,9 @@ from tools.interfaces import IClipboard
 import os 
 
 try:
-    if 'FDE_USE_X11' in os.environ:
+    if 'DISPLAY' in os.environ:
         if 'WAYLAND_DISPLAY' in os.environ:
             del os.environ['WAYLAND_DISPLAY']
-        os.environ['DISPLAY'] = ":0"
-    else:
-        if 'DISPLAY' in os.environ:
-            del os.environ['DISPLAY']
-        os.environ['WAYLAND_DISPLAY'] = "wayland-0"
     import pyclip
     canClip = True
 except Exception as e:
