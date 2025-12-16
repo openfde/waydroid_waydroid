@@ -14,6 +14,7 @@ import dbus.service
 import dbus.exceptions
 from gi.repository import GLib
 import copy
+import subprocess
 
 class DbusSessionManager(dbus.service.Object):
     def __init__(self, looper, bus, object_path, args):
@@ -38,7 +39,14 @@ def start(args, unlocked_cb=None, background=True):
         if unlocked_cb:
             unlocked_cb()
         return
-
+    if 'DISPLAY' in os.environ:
+        if os.getuid() != 1000:
+            try:
+                username = subprocess.check_output(['id', '-nu', '1000'], text=True).strip()
+                if username:
+                    subprocess.run(['xhost', f'+si:localuser:{username}'], check=False)
+            except Exception as e:
+                logging.warning(f"Failed to add xhost rule for localuser: {e}")
     session = copy.copy(tools.config.session_defaults)
     if os.environ.get("XDG_SESSION_TYPE") == "wayland":
         # TODO: also support WAYLAND_SOCKET?
@@ -122,6 +130,14 @@ def start(args, unlocked_cb=None, background=True):
     service(args, mainloop)
 
 def do_stop(args, looper):
+    if 'DISPLAY' in os.environ:
+        if os.getuid() != 1000:
+            try:
+                username = subprocess.check_output(['id', '-nu', '1000'], text=True).strip()
+                if username:
+                    subprocess.run(['xhost', f'-si:localuser:{username}'], check=False)
+            except Exception as e:
+                logging.warning(f"Failed to add xhost rule for localuser: {e}")
     services.user_manager.stop(args)
     services.clipboard_manager.stop(args)
     services.net_manager.stop(args)

@@ -52,7 +52,7 @@ class InotifyRecursiveWatcher:
             try:
               rel = os.path.relpath(path, self.watcher.root)
               if not rel.startswith(os.pardir):
-                path = os.path.abspath(os.path.join(self.watcher.replacedRootPrefix, rel))
+                path = os.path.join(self.watcher.replacedRootPrefix, rel)
             except Exception:
               pass
           payload = {"FileName": path, "OpCode": "ADD"}
@@ -65,7 +65,7 @@ class InotifyRecursiveWatcher:
             try:
               rel = os.path.relpath(path, self.watcher.root)
               if not rel.startswith(os.pardir):
-                path = os.path.abspath(os.path.join(self.watcher.replacedRootPrefix, rel))
+                path = os.path.join(self.watcher.replacedRootPrefix, rel)
             except Exception:
               pass
           payload = {"FileName": path, "OpCode": "DEL"}
