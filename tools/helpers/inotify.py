@@ -15,7 +15,7 @@ import re
 class InotifyRecursiveWatcher:
   def __init__(self, root: str, replacedRootPrefix: str = None):
     self.root = os.path.abspath(root)
-    self.replacedRootPrefix = replacedRootPrefix
+    self.replacedRootPrefix = os.path.abspath(replacedRootPrefix)
     self.wm = pyinotify.WatchManager()
     self.mask = (
       pyinotify.IN_CREATE
