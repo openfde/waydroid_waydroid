@@ -46,18 +46,16 @@ class InotifyRecursiveWatcher:
       if event.mask & (pyinotify.IN_CREATE | pyinotify.IN_MOVED_TO):
         if is_dir:
           self.watcher.add_watch_dir(path)
-          #self.watcher.add_watch_recursive(path)
-        else:
-          if self.watcher.replacedRootPrefix:
-            try:
-              rel = os.path.relpath(path, self.watcher.root)
-              if not rel.startswith(os.pardir):
-                path = os.path.join(self.watcher.replacedRootPrefix, rel)
-            except Exception:
-              pass
-          payload = {"FileName": path, "OpCode": "ADD"}
-          json_str = json.dumps(payload, ensure_ascii=False)
-          self.notificationService.desktop_notify(json_str)
+        if self.watcher.replacedRootPrefix:
+          try:
+            rel = os.path.relpath(path, self.watcher.root)
+            if not rel.startswith(os.pardir):
+              path = os.path.join(self.watcher.replacedRootPrefix, rel)
+          except Exception:
+            pass
+        payload = {"FileName": path, "OpCode": "ADD"}
+        json_str = json.dumps(payload, ensure_ascii=False)
+        self.notificationService.desktop_notify(json_str)
 
       if event.mask & (pyinotify.IN_DELETE | pyinotify.IN_MOVED_FROM):
         if self.watcher.replacedRootPrefix:
