@@ -3,7 +3,7 @@ import os
 import sys
 from typing import Dict, Set
 import pyinotify
-import logging
+from tools.helpers import logging
 from tools.interfaces import INotification
 import json
 import argparse
@@ -15,15 +15,13 @@ import re
 class InotifyRecursiveWatcher:
   def __init__(self, root: str, replacedRootPrefix: str = None):
     self.root = os.path.abspath(root)
-    self.replacedRootPrefix = os.path.abspath(replacedRootPrefix)
+    self.replacedRootPrefix = replacedRootPrefix
     self.wm = pyinotify.WatchManager()
     self.mask = (
       pyinotify.IN_CREATE
       | pyinotify.IN_DELETE
       | pyinotify.IN_MOVED_FROM
       | pyinotify.IN_MOVED_TO
-      | pyinotify.IN_DELETE_SELF
-      | pyinotify.IN_MOVE_SELF
     )
     self.wd_to_path: Dict[int, str] = {}
     self.watched_dirs: Set[str] = set()
@@ -62,6 +60,8 @@ class InotifyRecursiveWatcher:
         self.notificationService.desktop_notify(json_str)
 
       if event.mask & (pyinotify.IN_DELETE | pyinotify.IN_MOVED_FROM):
+        if is_dir:
+          self.watcher.remove_watch_dir_recursive(path)
         if self.watcher.replacedRootPrefix:
           try:
             rel = os.path.relpath(path, self.watcher.root)
@@ -73,11 +73,6 @@ class InotifyRecursiveWatcher:
         json_str = json.dumps(payload, ensure_ascii=False)
         self.notificationService.desktop_notify(json_str)
 
-      if event.mask & (pyinotify.IN_DELETE_SELF | pyinotify.IN_MOVE_SELF):
-        dirpath = event.path
-        if dirpath:
-          # 删除目录及其所有子目录的监听
-          self.watcher.remove_watch_dir_recursive(dirpath)
 
   def add_watch_dir(self, d: str):
     """添加目录监听（线程安全）"""
@@ -204,8 +199,8 @@ class InotifyRecursiveWatcher:
 
 
 def main():
-  if len(sys.argv) != 2:
-    print("Usage: python inotify.py <dir>")
+  if len(sys.argv) != 3:
+    print("Usage: python inotify.py <dir> <dirKey>")
     sys.exit(1)
 
   target = sys.argv[1]
@@ -213,7 +208,9 @@ def main():
     print(f"Not a directory: {target}")
     sys.exit(1)
 
-  watcher = InotifyRecursiveWatcher(target)
+  targetKey = sys.argv[2]
+
+  watcher = InotifyRecursiveWatcher(target,targetKey)
   try:
     watcher.run()
   except KeyboardInterrupt:
@@ -221,5 +218,3 @@ def main():
     watcher.do_stop()
 
 
-if __name__ == "__main__":
-  main()
