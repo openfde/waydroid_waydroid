@@ -355,7 +355,8 @@ def make_base_props(args):
     if not vulkan and dri:
         vulkan = tools.helpers.gpu.getVulkanDriver(args, os.path.basename(dri))
     if vulkan:
-        props.append("ro.hardware.vulkan=" + vulkan)
+        if vulkan != "FTG340":
+            props.append("ro.hardware.vulkan=" + vulkan)
 
     treble = tools.helpers.props.host_get(args, "ro.treble.enabled")
     if treble != "true":
