@@ -104,6 +104,9 @@ def set_permissions(args, perm_list=None, mode="777"):
         perm_list.extend(glob.glob("/dev/fb*"))
         # Videos
         perm_list.extend(glob.glob("/dev/video*"))
+        # brightness
+        perm_list.extend(glob.glob("/dev/i2c-*"))
+        perm_list.extend(glob.glob("/sys/class/backlight/*/brightness"))
 
     for path in perm_list:
         chmod(path, mode)
