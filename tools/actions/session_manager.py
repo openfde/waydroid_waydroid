@@ -47,6 +47,7 @@ def start(args, unlocked_cb=None, background=True):
                     subprocess.run(['xhost', f'+si:localuser:{username}'], check=False)
             except Exception as e:
                 logging.warning(f"Failed to add xhost rule for localuser: {e}")
+                subprocess.run(['xhost', '+'], check=False)
     session = copy.copy(tools.config.session_defaults)
     if os.environ.get("XDG_SESSION_TYPE") == "wayland":
         # TODO: also support WAYLAND_SOCKET?
@@ -138,6 +139,7 @@ def do_stop(args, looper):
                 if username:
                     subprocess.run(['xhost', f'-si:localuser:{username}'], check=False)
             except Exception as e:
+                subprocess.run(['xhost', '-'], check=False)
                 logging.warning(f"Failed to add xhost rule for localuser: {e}")
     services.user_manager.stop(args)
     services.clipboard_manager.stop(args)
