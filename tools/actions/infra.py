@@ -62,7 +62,7 @@ class DbusInfraManager(dbus.service.Object):
 
 
 def stopMonitor(self):
-      logging.info("stop monitor")
+      logging.info("infra stop monitor")
       try:
         if hasattr(self, "_watchers"):
           for w in self._watchers:
