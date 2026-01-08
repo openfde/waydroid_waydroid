@@ -126,7 +126,7 @@ def start(args, unlocked_cb=None, background=True):
     service(args, mainloop)
 
 def do_stop(args, looper):
-     if 'DISPLAY' in os.environ:
+    if 'DISPLAY' in os.environ:
         if os.getuid() != 1000:
             try:
                 username = subprocess.check_output(['id', '-nu', '1000'], text=True).strip()
