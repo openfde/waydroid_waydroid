@@ -4,6 +4,8 @@ import logging
 import threading
 from tools.interfaces import IClipboard
 import os 
+import json
+import re
 
 try:
     if 'DISPLAY' in os.environ:
@@ -26,7 +28,14 @@ def start(args):
 
     def getClipboardData():
         try:
-            return pyclip.paste()
+            text = pyclip.paste()
+            if isinstance(text, bytes):
+                text = text.decode('utf-8') 
+            has_unicode_escape = bool(re.search(r'\\u[0-9a-fA-F]{4}', text))
+            has_other_escape = bool(re.search(r'\\[ntr"\'\\]', text))
+            if has_unicode_escape or has_other_escape:
+                text = text.encode('utf-8').decode('unicode_escape')
+            return text
         except Exception as e:
             logging.debug(str(e))
         return ""
