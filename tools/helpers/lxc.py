@@ -246,6 +246,21 @@ def make_base_props(args):
                     if os.path.isfile(hal_file):
                         return prop
         return ""
+    def get_distrib_id():
+    lsb_release_path = "/etc/lsb-release"
+
+    if not os.path.exists(lsb_release_path):
+        return None
+
+    with open(lsb_release_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith('DISTRIB_ID='):
+                # 提取等号后面的值，并去掉引号
+                value = line.split('=', 1)[1].strip()
+                # 去掉可能存在的引号
+                return value.strip('"\'')
+    return None
 
     def find_hidl(intf):
         if args.vendor_type == "MAINLINE":
@@ -279,8 +294,13 @@ def make_base_props(args):
                 gralloc = "ranchu"
                 egl = "emulation"
             elif vulkan == "FTG340":
-                gralloc = "FTG340"
-                egl = "FTG340"
+                distrib_id = get_distrib_id()
+                if distrib_id = "uos":
+                    gralloc = "LEOPARD"
+                    egl = "LEOPARD"
+                else
+                    gralloc = "FTG340"
+                    egl = "FTG340"
             else :
                 if vulkan == "":
                     gralloc = "default"
@@ -293,7 +313,7 @@ def make_base_props(args):
             egl = "swiftshader"
         props.append("debug.stagefright.ccodec=0")
     props.append("ro.hardware.gralloc=" + gralloc)
-    if gralloc == "FTG340":
+    if vulkan == "FTG340":
         props.append("ro.sf.lcd_density=220")
     else:
         props.append("ro.sf.lcd_density=160")

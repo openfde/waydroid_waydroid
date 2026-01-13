@@ -32,7 +32,7 @@ def getVulkanDriver(args, dev):
         "virtio-pci": "virtio",
         "pvrsrvkm": "powervr",
         "ftg340": "FTG340",
-	"nouveau": "nouveau",
+        "nouveau": "nouveau",
         "jmgpu" :"ranchu"
     }
     kernel_driver = getKernelDriver(args, dev)
