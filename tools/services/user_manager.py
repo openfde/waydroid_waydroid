@@ -16,6 +16,9 @@ stopping = False
 def start(args, session, unlocked_cb=None):
     waydroid_data = session["waydroid_data"]
     apps_dir = session["xdg_data_home"] + "/applications/"
+    fde_com_android_apps = ["deskclock","calculator2","documentsui","gallery3d","settings"]
+    fde_org_lineageos_apps = ["eleven","etar","recorder"]
+    fde_extra_apps = ["com.ckl.launcher","com.fde.download","mark.via","com.iflytek.inputmethod"]
 
     def makeDesktopFile(appInfo):
         if appInfo is None:
@@ -37,6 +40,10 @@ def start(args, session, unlocked_cb=None):
         lines.append("Name=" + appInfo["name"])
         lines.append("Exec=fde_launch " + packageName)
         lines.append("Icon=" + waydroid_data + "/icons/" + packageName + ".png")
+        prefixRemovedPackage = packageName.replace("com.android.", "", 1)
+        lineageosRemovedPackage = packageName.replace("org.lineageos.","",1)
+        if prefixRemovedPackage in fde_com_android_apps or lineageosRemovedPackage in fde_org_lineageos_apps or packageName in fde_extra_apps:
+            lines.append("X-FDE-App-Type=System")
         desktop_file = open(desktop_file_path, "w")
         for line in lines:
             desktop_file.write(line + "\n")
@@ -83,11 +90,11 @@ def start(args, session, unlocked_cb=None):
             appsList = platformService.getAppsInfo()
             for app in appsList:
                 makeDesktopFile(app)
-            multiwin = platformService.getprop("persist.waydroid.multi_windows", "false")
-            if multiwin == "false":
-                makeWaydroidDesktopFile(False)
-            else:
-                makeWaydroidDesktopFile(True)
+            #multiwin = platformService.getprop("persist.waydroid.multi_windows", "false")
+            #if multiwin == "false":
+            #    makeWaydroidDesktopFile(False)
+            #else:
+            #    makeWaydroidDesktopFile(True)
         if unlocked_cb:
             unlocked_cb()
 
