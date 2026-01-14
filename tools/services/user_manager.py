@@ -34,22 +34,21 @@ def start(args, session, unlocked_cb=None):
         packageName = appInfo["packageName"]
 
         desktop_file_path = apps_dir + "/" + packageName + "_fde.desktop"
-        if os.path.isfile(desktop_file_path):
-            os.remove(desktop_file_path)
-        lines = ["[Desktop Entry]", "Type=Application"]
-        lines.append("Name=" + appInfo["name"])
-        lines.append("Exec=fde_launch " + packageName)
-        lines.append("Icon=" + waydroid_data + "/icons/" + packageName + ".png")
-        prefixRemovedPackage = packageName.replace("com.android.", "", 1)
-        lineageosRemovedPackage = packageName.replace("org.lineageos.","",1)
-        if prefixRemovedPackage in fde_com_android_apps or lineageosRemovedPackage in fde_org_lineageos_apps or packageName in fde_extra_apps:
-            lines.append("X-FDE-App-Type=System")
-        desktop_file = open(desktop_file_path, "w")
-        for line in lines:
+        if not os.path.exists(desktop_file_path):
+            lines = ["[Desktop Entry]", "Type=Application"]
+            lines.append("Name=" + appInfo["name"])
+            lines.append("Exec=fde_launch " + packageName)
+            lines.append("Icon=" + waydroid_data + "/icons/" + packageName + ".png")
+            prefixRemovedPackage = packageName.replace("com.android.", "", 1)
+            lineageosRemovedPackage = packageName.replace("org.lineageos.","",1)
+            if prefixRemovedPackage in fde_com_android_apps or lineageosRemovedPackage in fde_org_lineageos_apps or packageName in fde_extra_apps:
+                lines.append("X-FDE-App-Type=System")
+            desktop_file = open(desktop_file_path, "w")
+            for line in lines:
             desktop_file.write(line + "\n")
-        desktop_file.close()
-        os.chmod(desktop_file_path, 0o644)
-        return 0
+            desktop_file.close()
+            os.chmod(desktop_file_path, 0o644)
+            return 0
 
     def makeWaydroidDesktopFile(hide):
         desktop_file_path = apps_dir + "/Waydroid.desktop"
