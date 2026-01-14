@@ -247,20 +247,18 @@ def make_base_props(args):
                         return prop
         return ""
     def get_distrib_id():
-    lsb_release_path = "/etc/lsb-release"
+        lsb_release_path = "/etc/lsb-release"
 
-    if not os.path.exists(lsb_release_path):
+        if not os.path.exists(lsb_release_path):
+            return None
+
+        with open(lsb_release_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('DISTRIB_ID='):
+                    value = line.split('=', 1)[1].strip()
+                    return value.strip('"\'')
         return None
-
-    with open(lsb_release_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith('DISTRIB_ID='):
-                # 提取等号后面的值，并去掉引号
-                value = line.split('=', 1)[1].strip()
-                # 去掉可能存在的引号
-                return value.strip('"\'')
-    return None
 
     def find_hidl(intf):
         if args.vendor_type == "MAINLINE":
@@ -295,10 +293,10 @@ def make_base_props(args):
                 egl = "emulation"
             elif vulkan == "FTG340":
                 distrib_id = get_distrib_id()
-                if distrib_id = "uos":
+                if distrib_id == "uos":
                     gralloc = "LEOPARD"
                     egl = "LEOPARD"
-                else
+                else:
                     gralloc = "FTG340"
                     egl = "FTG340"
             else :
