@@ -45,7 +45,7 @@ def start(args, session, unlocked_cb=None):
                 lines.append("X-FDE-App-Type=System")
             desktop_file = open(desktop_file_path, "w")
             for line in lines:
-            desktop_file.write(line + "\n")
+                desktop_file.write(line + "\n")
             desktop_file.close()
             os.chmod(desktop_file_path, 0o644)
             return 0
