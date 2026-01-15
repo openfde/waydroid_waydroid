@@ -311,7 +311,7 @@ def make_base_props(args):
             egl = "swiftshader"
         props.append("debug.stagefright.ccodec=0")
     props.append("ro.hardware.gralloc=" + gralloc)
-    if vulkan == "FTG340":
+    if gralloc == "FTG340" or gralloc == "LEOPARD":
         props.append("ro.sf.lcd_density=220")
     else:
         props.append("ro.sf.lcd_density=160")
