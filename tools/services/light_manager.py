@@ -60,7 +60,7 @@ def start(args):
         try:
             result = subprocess.run(['ddcutil', '--version'], capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
-                detectResult = subprocess.run(['ddcutil', 'detect'], capture_output=True, text=True, timeout=10)
+                detectResult = subprocess.run(['ddcutil', 'detect'], capture_output=True, text=True, timeout=30)
                 if detectResult.returncode == 0:
                     return parseDdcutilDisplays(detectResult.stdout)
         except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError) as e:
