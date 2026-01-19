@@ -164,6 +164,19 @@ def is_target_os(target):
         except FileNotFoundError:
             return False
 
+def is_kylin_v11():
+    try:
+        with open('/etc/os-release','r') as f:
+            os_info = f.read().lower()
+            return True if 'id=kylin' in os_info and 'version_id="v11"' in os_info else False
+    except FileNotFoundError:
+        try:
+            with open('/etc/lsb-release','r') as f:
+                os_info = f.read().lower()
+                return True if 'distrib_id=kylin' in os_info and 'distrib_release=v11' in os_info else False
+        except FileNotFoundError:
+            return False
+
 def set_lxc_config(args):
     lxc_path = tools.config.defaults["lxc"] + "/waydroid"
     lxc_ver = get_lxc_version(args)
@@ -192,6 +205,10 @@ def set_lxc_config(args):
     if is_target_os("ubuntu") or is_target_os("deepin") or is_target_os("debian"):
         command = ["sed", "-i", "s/proc/proc:rw/".format(platform.machine()), lxc_path + "/config"]
         tools.helpers.run.user(args, command)
+        command = ["sed", "-i", "s/cgroup:ro/cgroup:rw/".format(platform.machine()), lxc_path + "/config"]
+        tools.helpers.run.user(args, command)
+
+    if is_kylin_v11():
         command = ["sed", "-i", "s/cgroup:ro/cgroup:rw/".format(platform.machine()), lxc_path + "/config"]
         tools.helpers.run.user(args, command)
 
