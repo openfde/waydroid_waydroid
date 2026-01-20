@@ -42,7 +42,7 @@ def start(args, session, unlocked_cb=None):
             prefixRemovedPackage = packageName.replace("com.android.", "", 1)
             lineageosRemovedPackage = packageName.replace("org.lineageos.","",1)
             if prefixRemovedPackage in fde_com_android_apps or lineageosRemovedPackage in fde_org_lineageos_apps or packageName in fde_extra_apps:
-                lines.append("X-FDE-App-Type=System")
+                lines.append("NoDisplay=true")
             desktop_file = open(desktop_file_path, "w")
             for line in lines:
                 desktop_file.write(line + "\n")
