@@ -18,7 +18,7 @@ def start(args, session, unlocked_cb=None):
     apps_dir = session["xdg_data_home"] + "/applications/"
     fde_com_android_apps = ["deskclock","camera2","calculator2","documentsui","gallery3d","settings"]
     fde_org_lineageos_apps = ["eleven","etar","recorder"]
-    fde_extra_apps = ["com.ckl.launcher","com.fde.download","mark.via","com.iflytek.inputmethod"]
+    fde_extra_apps = ["com.fde.download","mark.via","com.iflytek.inputmethod"]
 
     def makeDesktopFile(appInfo):
         if appInfo is None:
