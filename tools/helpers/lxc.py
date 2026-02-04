@@ -45,6 +45,8 @@ def generate_nodes_lxc_config(args):
     make_entry("/dev/full")
     make_entry("/dev/ashmem")
     make_entry("/dev/fuse")
+    if os.path.exists("/dev/dma_heap/system"):
+        make_entry("/dev/dma_heap/system")
     if os.path.exists("/dev/fdeion"):
         make_entry("/dev/fdeion","dev/ion")
     else:
