@@ -755,7 +755,7 @@ def start(args):
             elif patterns['poweredOff'].search(event.data['data']):
                 initData['controller'].controller['Powered'] = False
                 triggerEvent(CallBackEvents.BT_STATE_OFF.value)
-                self.devices = {}
+                initData['controller'].devices = {}
             elif patterns['scanOn'].search(event.data['data']):
                 initData['controller'].controller['Discovering'] = True
                 triggerEvent(CallBackEvents.BT_DISCOVERY_STARTED.value)
@@ -900,4 +900,4 @@ def stop(args):
         if args.bluetoothLoop:
             args.bluetoothLoop.quit()
     except AttributeError:
-        logging.debug("net service is not even started")
+        logging.debug("bluetooth service is not even started")
