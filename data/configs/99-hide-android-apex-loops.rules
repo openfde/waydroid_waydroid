@@ -1,1 +1,2 @@
 ACTION=="add|change|existing", KERNEL=="loop*", ATTR{loop/backing_file}=="*\.apex*", ENV{UDISKS_IGNORE}="1", OPTIONS+="nowatch"
+ACTION=="add", KERNEL=="video[0-9]*", MODE="0666"
