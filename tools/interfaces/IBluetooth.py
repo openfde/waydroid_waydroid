@@ -169,14 +169,14 @@ def addService(args, registerCallback, unregisterCallback, init, cleanup, enable
             if status:
                 logging.error("Failed to add service {}: {}".format(
                     SERVICE_NAME, status))
-                args.netLoop.quit()
+                args.bluetoothLoop.quit()
 
     response = serviceManager.new_local_object(INTERFACE, responseHandler)
-    args.bluettoothLoop = GLib.MainLoop()
+    args.bluetoothLoop = GLib.MainLoop()
     binderPresence()
     status = serviceManager.add_presence_handler(binderPresence)
     if status:
-        args.bluettoothLoop.run()
+        args.bluetoothLoop.run()
         serviceManager.remove_handler(status)
         del serviceManager
     else:
