@@ -264,7 +264,7 @@ def generate_session_lxc_config(args, session):
 
     if not make_entry(session["waydroid_data"], "data", options="rbind 0 0"):
         raise OSError("Failed to bind userdata")
-    if not make_entry("/volumes", "volumes", options="rbind 0 0"):
+    if not make_entry("/var/lib/fde/volumes", "volumes", options="rbind 0 0"):
         raise OSError("Failed to bind volumes")
     if not make_entry("/var/lib/fde/sockets", "sockets", options="bind,create=dir 0 0"):
         raise OSError("Failed to bind sockets")
