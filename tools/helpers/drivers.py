@@ -9,21 +9,33 @@ import tools.config
 import tools.helpers.run
 
 
+BINDERFS_DRIVERS = [
+    "fde-binder",
+]
+VNDBINDERFS_DRIVERS = [
+    "fde-vndbinder",
+]
+HWBINDERFS_DRIVERS = [
+    "fde-hwbinder",
+]
+
 BINDER_DRIVERS = [
     "fde-binder",
+    "binder",
     "puddlejumper",
-    "bonder",
 ]
 VNDBINDER_DRIVERS = [
     "fde-vndbinder",
+    "vndbinder",
     "vndpuddlejumper",
-    "vndbonder",
 ]
 HWBINDER_DRIVERS = [
     "fde-hwbinder",
+    "hwbinder",
     "hwpuddlejumper",
-    "hwbonder",
 ]
+
+
 
 
 def isBinderfsLoaded(args):
@@ -68,21 +80,21 @@ def probeBinderDriver(args):
     has_binder = False
     has_vndbinder = False
     has_hwbinder = False
-    for node in BINDER_DRIVERS:
+    for node in BINDERFS_DRIVERS:
         if os.path.exists("/dev/" + node):
             has_binder = True
     if not has_binder:
-        binder_dev_nodes.append(BINDER_DRIVERS[0])
-    for node in VNDBINDER_DRIVERS:
+        binder_dev_nodes.append(BINDERFS_DRIVERS[0])
+    for node in VNDBINDERFS_DRIVERS:
         if os.path.exists("/dev/" + node):
             has_vndbinder = True
     if not has_vndbinder:
-        binder_dev_nodes.append(VNDBINDER_DRIVERS[0])
-    for node in HWBINDER_DRIVERS:
+        binder_dev_nodes.append(VNDBINDERFS_DRIVERS[0])
+    for node in HWBINDERFS_DRIVERS:
         if os.path.exists("/dev/" + node):
             has_hwbinder = True
     if not has_hwbinder:
-        binder_dev_nodes.append(HWBINDER_DRIVERS[0])
+        binder_dev_nodes.append(HWBINDERFS_DRIVERS[0])
 
     if len(binder_dev_nodes) > 0:
         if not isBinderfsLoaded(args):
