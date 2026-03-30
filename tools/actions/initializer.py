@@ -108,6 +108,9 @@ def init(args):
         except dbus.DBusException:
             pass
         setup_config(args)
+        for path in ["/var/lib/fde/volumes", "/var/lib/fde/sockets"]:
+            if not os.path.isdir(path):
+                os.makedirs(path, exist_ok=True)
         status = "STOPPED"
         if os.path.exists(tools.config.defaults["lxc"] + "/waydroid"):
             status = helpers.lxc.status(args)
