@@ -7,6 +7,7 @@ import fcntl
 import struct
 import tools.config
 import tools.helpers.run
+import version
 
 
 BINDERFS_DRIVERS = [
@@ -97,6 +98,8 @@ def probeBinderDriver(args):
         binder_dev_nodes.append(HWBINDERFS_DRIVERS[0])
 
     if len(binder_dev_nodes) > 0:
+        if version.is_kylin_v11:
+            return 0
         if not isBinderfsLoaded(args):
             devices = ','.join(binder_dev_nodes)
             command = ["modprobe", "binder_linux",
