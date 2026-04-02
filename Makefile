@@ -13,7 +13,9 @@ SYSD_DIR := $(PREFIX)/lib/systemd/system
 DBUS_DIR := $(PREFIX)/share/dbus-1
 POLKIT_DIR := $(PREFIX)/share/polkit-1
 APPARMOR_DIR := /etc/apparmor.d
+SO_DIR := $(PREFIX)/local/lib/python3.12/dist-packages/
 
+INSTALL_SO_DIR := $(DESTDIR)$(SO_DIR)
 INSTALL_WAYDROID_DIR := $(DESTDIR)$(WAYDROID_DIR)
 INSTALL_BIN_DIR := $(DESTDIR)$(BIN_DIR)
 INSTALL_APPS_DIR := $(DESTDIR)$(APPS_DIR)
@@ -30,6 +32,7 @@ build:
 install:
 	install -d $(INSTALL_WAYDROID_DIR) $(INSTALL_BIN_DIR) $(INSTALL_DBUS_DIR)/system.d $(INSTALL_POLKIT_DIR)/actions
 	install -d $(INSTALL_APPS_DIR) $(INSTALL_METAINFO_DIR) $(INSTALL_ICONS_DIR)/hicolor/512x512/apps
+	install -d $(INSTALL_SO_DIR)
 	cp -a data tools waydroid.py wheel $(INSTALL_WAYDROID_DIR)
 	ln -sf $(WAYDROID_DIR)/waydroid.py $(INSTALL_BIN_DIR)/waydroid
 	ln -sf $(WAYDROID_DIR)/data/AppIcon.png $(INSTALL_ICONS_DIR)/hicolor/512x512/apps/waydroid.png
@@ -39,6 +42,7 @@ install:
 	cp dbus/id.waydro.Container.conf $(INSTALL_DBUS_DIR)/system.d/
 	cp dbus/com.openfde.Infra.conf $(INSTALL_DBUS_DIR)/system.d/
 	cp dbus/id.waydro.Container.policy $(INSTALL_POLKIT_DIR)/actions/
+	cp gbinderlib/*.so $(INSTALL_SO_DIR)/
 	if [ $(USE_DBUS_ACTIVATION) = 1 ]; then \
 		install -d $(INSTALL_DBUS_DIR)/system-services; \
 		cp dbus/id.waydro.Container.service $(INSTALL_DBUS_DIR)/system-services/; \
