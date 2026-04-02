@@ -7,7 +7,7 @@ import fcntl
 import struct
 import tools.config
 import tools.helpers.run
-import version
+from tools.helpers import version
 
 
 BINDERFS_DRIVERS = [

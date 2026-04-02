@@ -11,7 +11,7 @@ import platform
 import gbinder
 import tools.config
 import tools.helpers.run
-import version
+from tools.helpers import version
 
 def get_lxc_version(args):
     if shutil.which("lxc-info") is not None:
@@ -175,7 +175,7 @@ def set_lxc_config(args):
     command = ["sed", "-i", "s/LXCARCH/{}/".format(platform.machine()), lxc_path + "/config"]
     tools.helpers.run.user(args, command)
 
-    if version.is_target_os("ubuntu") or is_target_os("deepin") or is_target_os("debian"):
+    if version.is_target_os("ubuntu") or version.is_target_os("deepin") or version.is_target_os("debian"):
         command = ["sed", "-i", "s/proc/proc:rw/".format(platform.machine()), lxc_path + "/config"]
         tools.helpers.run.user(args, command)
         command = ["sed", "-i", "s/cgroup:ro/cgroup:rw/".format(platform.machine()), lxc_path + "/config"]
