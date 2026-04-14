@@ -142,13 +142,6 @@ def make_prop(args, cfg, full_props_path):
 
 
     props.append("ro.openfde.version=20230318.111310")
-    props.append("ro.product.brand=google")
-    props.append("ro.product.manufacturer=Google")
-    props.append("ro.system.build.product=redfin")
-    props.append("ro.product.name=redfin")
-    props.append("ro.product.device=redfin")
-    props.append("ro.product.model=Pixel 5")
-    props.append("ro.system.build.flavor=redfin-user")
 
     final_props = open(full_props_path, "w")
     for prop in props:

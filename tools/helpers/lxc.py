@@ -499,7 +499,7 @@ def start(args):
         for serial in cpu_serials:
             break
     command = ["lxc-start", "-P", tools.config.defaults["lxc"],
-               "-F", "-n", "waydroid", "--", "/init"," androidboot.hardware=qcom ", " androidboot.serialno="+serial, " androidboot.mode=normal "]
+               "-F", "-n", "waydroid", "--", "/init"," androidboot.hardware=tangorpro ", " androidboot.serialno="+serial, " androidboot.mode=normal "]
     tools.helpers.run.user(args, command, output="background")
     wait_for_running(args)
     # Workaround lxc-start changing stdout/stderr permissions to 700
