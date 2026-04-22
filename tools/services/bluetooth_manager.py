@@ -45,7 +45,10 @@ patterns = {
     'deiceMacInfo': re.compile(r'Device\s+([0-9A-F:]+)\s+(.+)'),
     'deviceNewChgDel': r'\[(NEW|CHG|DEL)\]\s+Device\s+([0-9A-F:]+)\s*(.*)',
     'ControllerNewChgDel': r'\[(NEW|CHG|DEL)\]\s+Controller\s+([0-9A-F:]+)\s*(.*)',
-    'UUIDs': r'\(([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\)'
+    'UUIDs': r'\(([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\)',
+    'agent': r'\[agent\]\s+Passkey:\s+([0-9]+)',
+    'pairing': r'Attempting to pair with\s+([0-9A-F:]+)',
+    'devices': r'Device\s+([0-9A-F:]+)\s*(.*)'
 }
 
 def start(args):
@@ -100,8 +103,14 @@ def start(args):
         DEVICE_PROPERTY_CHANGED = 6
         BOND_STATE_CHANGE = 7
         FROFILE_CONNECTION_STATE_CHANGED = 8
+        PIN_REQUEST = 9
+        AGENT = 998
         DEVICE_REMOVED = 999
         All_CHG = 1000
+
+    class Device(Enum):
+        BITMASK = 0x1FFC
+        PERIPHERAL_KEYBOARD = 0x0540
 
     def haveHci() -> bool:
         result = subprocess.run(['hciconfig'], capture_output=True, text=True, timeout=10)
@@ -197,12 +206,18 @@ def start(args):
                     line.rstrip('\n')
                     if not line:
                         continue
-                    if line.startswith('[NEW]') or line.startswith('[CHG]') or line.startswith('[DEL]'):
+                    if (line.startswith('[NEW]') or line.startswith('[CHG]') or line.startswith('[DEL]')
+                        or line.startswith('[agent]')):
                         event = self._parseEventLine(line)
                         if event:
                             self.eventQueue.put(event)
                     elif "(yes/no):" in line:
-                        self.sendCommand('yes')  
+                        self.sendCommand('yes')
+                    elif "Attempting to pair with" in line:
+                        match = re.search(patterns['pairing'], line)
+                        mac = match.group(1)
+                        if mac in self.knownDevices:
+                            self.controller.devices[mac]['Pairing'] = True
             except Exception as e:
                 if self.monitoring:
                     logging.error(f"monitorOutput thread fail : {e}")
@@ -215,6 +230,27 @@ def start(args):
                 eventTypeHead = 'CHG'
             elif line.startswith('[DEL]'):
                 eventTypeHead = 'DEL'
+            elif line.startswith('[agent]'):
+                logging.debug("agent line: " + line)
+                match = re.search(patterns['agent'], line)
+                if match:
+                    pairingMac = "none"
+                    for mac in self.controller.devices:
+                        if (('Pairing' in self.controller.devices[mac] and self.controller.devices[mac]['Pairing'] == True) and
+                            ((Device.BITMASK.value & int(self.controller.devices[mac]['Class'], 16)) == Device.PERIPHERAL_KEYBOARD.value)):
+                            pairingMac = mac
+                            break
+                    if pairingMac != "none":
+                        return BluetoothEvent(
+                            CallBackEvents.AGENT,
+                            {
+                                'subType': CallBackEvents.PIN_REQUEST,
+                                'mac': pairingMac,
+                                'name': self.controller.devices[mac]['Name'],
+                                'pin': int(match.group(1))
+                            }
+                        )
+                return None
             else:
                 return None
             match = re.search(patterns['deviceNewChgDel'], line)
@@ -236,17 +272,10 @@ def start(args):
                 self.knownDevices.add(mac)
                 logging.verbose(f"note a device: {mac} - {deviceInfo}")
                 infoOutput = self.controller.sendCommand('info ' + mac)
-                deviceClass = '0x00000000'
-                for line in infoOutput.split('\n'):
-                   line = line.strip()
-                   if 'Class:' in line:
-                       deviceClass = line.split(':', 1)[1].strip()
-                       break
                 return BluetoothEvent(
                     CallBackEvents.DEVICE_FOUND,
                     {
                         'mac': mac,
-                        'class': deviceClass,
                         'name': deviceInfo
                     }
                 )
@@ -356,6 +385,35 @@ def start(args):
             if "Discovering: yes" in info:
                 self.controller['Discovering'] = True
                 triggerEvent(CallBackEvents.BT_DISCOVERY_STARTED.value)
+                info = self.sendCommand("devices")
+                offset = 1
+                for line in info.split('\n'):
+                   line = line.strip()
+                   match = re.search(patterns['devices'], line)
+                   name = match.group(2).strip() if match else None
+                   if match and not patterns['starsWithMac'].match(name):
+                       mac = match.group(1)
+                       self.eventMonitor.knownDevices.add(mac)
+                       deviceInfo = self.sendCommand("info " + mac)
+                       deviceClass = '0x00000000'
+                       for line in deviceInfo.split('\n'):
+                          if 'Class:' in line:
+                              deviceClass = line.split(':', 1)[1].strip()
+                              break
+                       triggerEvent(CallBackEvents.DEVICE_PROPERTY_CHANGED.value, json.dumps({
+                           'mac': mac,
+                           BluetoothProperty.BT_PROPERTY_BDADDR.value: mac,
+                           BluetoothProperty.BT_PROPERTY_CLASS_OF_DEVICE.value: deviceClass,
+                           BluetoothProperty.BT_PROPERTY_BDNAME.value: name
+                       }))
+                       threadTodo(CallBackEvents.DEVICE_FOUND.value, 0.1 * offset, json.dumps({'mac': mac}))
+                       offset += 1
+                       self.devices[mac] = {
+                           'Name': name,
+                           'Class': deviceClass,
+                           'Paired': False,
+                           'Connected': False
+                       }
             else:
                 self.sendMonitorCommand("scan on")
             return True
@@ -387,6 +445,8 @@ def start(args):
                            break
                     uuids = re.findall(patterns['UUIDs'], deviceInfo, re.IGNORECASE)
                     self.devices[mac] = {
+                        'Name': name,
+                        'Class': deviceClass,
                         'Paired': True,
                         'Connected': 'Connected: yes' in deviceInfo
                     }
@@ -402,10 +462,14 @@ def start(args):
                            'mac': mac
                         }))
                         threadTodo(CallBackEvents.BOND_STATE_CHANGE.value, 0.3, json.dumps({
+                            'mac': mac,
+                            'state': BondState.BT_BOND_STATE_BONDING.value
+                        }))
+                        threadTodo(CallBackEvents.BOND_STATE_CHANGE.value, 0.4, json.dumps({
                            'mac': mac,
                            'state': BondState.BT_BOND_STATE_BONDED.value
                         }))
-                        threadTodo(CallBackEvents.FROFILE_CONNECTION_STATE_CHANGED.value, 0.4, json.dumps({
+                        threadTodo(CallBackEvents.FROFILE_CONNECTION_STATE_CHANGED.value, 0.5, json.dumps({
                            'mac': mac,
                            'state': ConnectionState.STATE_CONNECTED.value
                         }))
@@ -422,6 +486,10 @@ def start(args):
                            'mac': mac
                         }))
                         threadTodo(CallBackEvents.BOND_STATE_CHANGE.value, 0.3, json.dumps({
+                            'mac': mac,
+                            'state': BondState.BT_BOND_STATE_BONDING.value
+                        }))
+                        threadTodo(CallBackEvents.BOND_STATE_CHANGE.value, 0.4, json.dumps({
                            'mac': mac,
                            'state': BondState.BT_BOND_STATE_BONDED.value
                         }))
@@ -461,11 +529,28 @@ def start(args):
                 }))
                 threadTodo(CallBackEvents.BOND_STATE_CHANGE.value, 0.1, json.dumps({
                     'mac': address,
+                    'state': BondState.BT_BOND_STATE_BONDING.value
+                }))
+                threadTodo(CallBackEvents.BOND_STATE_CHANGE.value, 0.2, json.dumps({
+                    'mac': address,
                     'state': BondState.BT_BOND_STATE_BONDED.value
                 }))
             else:
+                triggerEvent(CallBackEvents.BOND_STATE_CHANGE.value, json.dumps({
+                    'mac': address,
+                    'state': BondState.BT_BOND_STATE_BONDING.value
+                }))
                 self.sendMonitorCommand("trust " + address)
                 self.sendMonitorCommand("pair " + address)
+                def delayTodo(delay, address):
+                    time.sleep(delay)
+                    if not self.devices[address]['Paired']:
+                        logging.debug("not paired")
+                        triggerEvent(CallBackEvents.BOND_STATE_CHANGE.value, json.dumps({
+                            'mac': address,
+                            'state': BondState.BT_BOND_STATE_NONE.value
+                        }))
+                threading.Thread(target=delayTodo, args=(30, address)).start()
             return True
 
         def removeBond(self, address: str) -> bool:
@@ -645,6 +730,9 @@ def start(args):
             if self.monitoringEnabled:
                 self.stopMonitoring()
 
+        def onAgent(self, handler: Callable):
+            self.eventMonitor.registerHandler(CallBackEvents.AGENT, handler)
+
     def removeCallback(callback, reason="unknown"):
         global callbackData
         with callbackData['lock']:
@@ -732,6 +820,8 @@ def start(args):
         }))
         threadTodo(CallBackEvents.DEVICE_FOUND.value, 0.1, json.dumps({'mac': event.data['mac']}))
         initData['controller'].devices[event.data['mac']] = {
+            'Name': event.data['name'],
+            'Class': deviceClass,
             'Paired': False,
             'Connected': False
         }
@@ -785,6 +875,7 @@ def start(args):
                 }))
                 if event.data['mac'] in initData['controller'].devices:
                     initData['controller'].devices[event.data['mac']]['Paired'] = True
+                    initData['controller'].devices[event.data['mac']]['Pairing'] = False
                 else:
                     logging.debug(f"{event.data['mac']} paired but not in devices!!")
             elif patterns['deviceConnected'].search(event.data['data']):
@@ -818,6 +909,14 @@ def start(args):
                     'mac': event.data['mac'],
                     BluetoothProperty.BT_PROPERTY_REMOTE_FRIENDLY_NAME.value: event.data['data'].split(':', 1)[1].strip()
                 }))
+
+    def onAgent(event: BluetoothEvent):
+        if event.data['subType'] is CallBackEvents.PIN_REQUEST:
+            triggerEvent(CallBackEvents.PIN_REQUEST.value, json.dumps({
+               'mac': event.data['mac'],
+               'name': event.data['name'],
+               'pin': event.data['pin']
+            }))
 
     def init() -> bool:
         return True
@@ -881,6 +980,7 @@ def start(args):
                 initData['controller'].onDeviceDiscovered(onDeviceDiscovered)
                 initData['controller'].onDeviceRemoved(onDeviceRemoved)
                 initData['controller'].onChg(onChg)
+                initData['controller'].onAgent(onAgent)
             IBluetooth.addService(args, registerCallback, unregisterCallback,init,
                 cleanup, enable, disable, getAdapterProperties, getAdapterProperty,
                 setAdapterProperty, createBond, removeBond, cancelBond, pairingIsBusy,
