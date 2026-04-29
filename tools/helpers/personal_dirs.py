@@ -10,7 +10,6 @@ from typing import Dict
 _DEFAULTS = {
   "Desktop": os.path.expanduser("~/Desktop"),
   "Download": os.path.expanduser("~/Downloads"),
-  "Documents": os.path.expanduser("~/Documents"),
   "Music": os.path.expanduser("~/Music"),
   "Pictures": os.path.expanduser("~/Pictures"),
   "Movies": os.path.expanduser("~/Videos"),
@@ -65,13 +64,13 @@ def _parse_user_dirs(path: str) -> Dict[str, str]:
 def get_personal_dirs() -> Dict[str, str]:
   """
   Parse ~/.config/user-dirs.dirs and return a dict containing keys:
-  MUSIC, PICTURES, DESKTOP, DOWNLOAD, DOCUMENTS, VIDEOS mapped to paths.
+  MUSIC, PICTURES, DESKTOP, DOWNLOAD, VIDEOS mapped to paths.
   If a key is missing, fall back to _DEFAULTS.
   """
   parsed = _parse_user_dirs(_USER_DIRS_PATH)
 
   out = dict(_DEFAULTS)  # start from defaults
-  for key in ("MUSIC", "PICTURES", "DESKTOP", "DOWNLOAD", "DOCUMENTS", "VIDEOS"):
+  for key in ("MUSIC", "PICTURES", "DESKTOP", "DOWNLOAD", "VIDEOS"):
     if key in parsed:
       outKey = key[:1].upper() + key[1:].lower()
       if key == "VIDEOS":
