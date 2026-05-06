@@ -14,8 +14,8 @@ import re
 white_list = {"3ga", "3gpp", "aac", "ac3","a52", "amr", "imy", "rtttl", "xmf", "mxmf", "m4a", "m4b", "m4p", "f4a", "f4b", "f4p",
               "m3u","smf","mka","ra","mp3","bmp","gif","heic","heics","heif","hif","heifs","avif","cur","webp","dng","raf","ico",
               "nrw","rw2","pef","srw","arw","3gpp2","3gp2","3g2","3gpp","avi","m4v","f4v","mp4","mpeg4","mpeg","m2ts","mts","ts","yt","wrf",
-              "aac","adts","adt","snd","flac","rtx","mp3","mp2","mp1","mpa","m4a","m4r","m3u","m3u8","jpg","bmp","3gpp","mpeg","mpeg2","mpv2","mp2v","m2v",
-              "m2t","mpeg1","mpv1","mp1v","m1v","mov","mkv"}
+              "aac","adts","adt","snd","flac","rtx","mp3","mp2","mp1","mpa","m4a","m4r","m3u","m3u8","jpg","jpeg","png","gif","webp","bmp",
+              "3gpp","mpeg","mpeg2","mpv2","mp2v","m2v","m2t","mpeg1","mpv1","mp1v","m1v","mov","mkv"}
 
 class InotifyRecursiveWatcher:
   def __init__(self, root: str, replacedRootPrefix: str = None):
@@ -49,7 +49,7 @@ class InotifyRecursiveWatcher:
       is_dir = bool(event.dir)
       path = event.pathname
       suffix = os.path.splitext(os.path.basename(path))[1].lstrip(".").lower()
-      if suffix and suffix not in white_list:
+      if suffix not in white_list and self.watcher.replacedRootPrefix != "/Desktop":
         return
 
       if event.mask & (pyinotify.IN_CREATE | pyinotify.IN_MOVED_TO):
@@ -72,7 +72,8 @@ class InotifyRecursiveWatcher:
         if is_dir:
           self.watcher.remove_watch_dir_recursive(path)
         suffix = os.path.splitext(os.path.basename(path))[1].lstrip(".").lower()
-        if suffix and suffix not in white_list:
+        # Notify every file located in Desktop to trigger Launcher refresh
+        if suffix not in white_list and self.watcher.replacedRootPrefix != "/Desktop":
           return
         if self.watcher.replacedRootPrefix:
           try:
