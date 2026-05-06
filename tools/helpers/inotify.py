@@ -48,16 +48,14 @@ class InotifyRecursiveWatcher:
     def process_default(self, event: pyinotify.Event):
       is_dir = bool(event.dir)
       path = event.pathname
-      suffix = os.path.splitext(os.path.basename(path))[1].lstrip(".").lower()
-      if suffix not in white_list and self.watcher.replacedRootPrefix != "/Desktop":
-        return
-
       if event.mask & (pyinotify.IN_CREATE | pyinotify.IN_MOVED_TO):
         if is_dir:
           self.watcher.add_watch_dir(path)
           self.watcher.add_watch_recursive(path)
-        
         if self.watcher.replacedRootPrefix:
+          suffix = os.path.splitext(os.path.basename(path))[1].lstrip(".").lower()
+          if suffix not in white_list and self.watcher.replacedRootPrefix != "/Desktop":
+            return
           try:
             rel = os.path.relpath(path, self.watcher.root)
             if not rel.startswith(os.pardir):
@@ -71,11 +69,11 @@ class InotifyRecursiveWatcher:
       if event.mask & (pyinotify.IN_DELETE | pyinotify.IN_MOVED_FROM):
         if is_dir:
           self.watcher.remove_watch_dir_recursive(path)
-        suffix = os.path.splitext(os.path.basename(path))[1].lstrip(".").lower()
-        # Notify every file located in Desktop to trigger Launcher refresh
-        if suffix not in white_list and self.watcher.replacedRootPrefix != "/Desktop":
-          return
         if self.watcher.replacedRootPrefix:
+          suffix = os.path.splitext(os.path.basename(path))[1].lstrip(".").lower()
+          # Notify every file located in Desktop to trigger Launcher refresh
+          if suffix not in white_list and self.watcher.replacedRootPrefix != "/Desktop":
+            return
           try:
             rel = os.path.relpath(path, self.watcher.root)
             if not rel.startswith(os.pardir):
