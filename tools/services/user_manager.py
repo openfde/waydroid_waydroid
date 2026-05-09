@@ -70,36 +70,39 @@ def start(args, session, unlocked_cb=None):
         os.chmod(desktop_file_path, 0o644)
 
     def userUnlocked(uid):
-        logging.info("Android with user {} is ready".format(uid))
-        url = "http://127.0.0.1:18080/api/v1/user_manager/unlock"
+        def do_work():
+            logging.info("Android with user {} is ready".format(uid))
+            url = "http://127.0.0.1:18080/api/v1/user_manager/unlock"
 
-        try:
-            response = requests.post(url)
-            logging.info("Android with user {} is ready, post fs fusing".format(uid))
-            response.raise_for_status()  # Raise an exception if the request was unsuccessful
-            tools.helpers.ipc.DBusInfraService().Monitor(get_personal_dirs())
-        except requests.exceptions.RequestException as e:
-            logging.warning("post fs_fuing failed")
+            try:
+                response = requests.post(url)
+                logging.info("Android with user {} is ready, post fs fusing".format(uid))
+                response.raise_for_status()  # Raise an exception if the request was unsuccessful
+                tools.helpers.ipc.DBusInfraService().Monitor(get_personal_dirs())
+            except requests.exceptions.RequestException as e:
+                logging.warning("post fs_fuing failed")
 
-        """
-        tools.helpers.net.adb_connect(args)
+            """
+            tools.helpers.net.adb_connect(args)
 
-        platformService = IPlatform.get_service(args)
-        if platformService:
-            if not os.path.exists(apps_dir):
-                os.mkdir(apps_dir)
-                os.chmod(apps_dir, 0o700)
-            appsList = platformService.getAppsInfo()
-            for app in appsList:
-                makeDesktopFile(app)
-            multiwin = platformService.getprop("persist.openfde.multi_windows", "false")
-            if multiwin == "false":
-                makeWaydroidDesktopFile(False)
-            else:
-                makeWaydroidDesktopFile(True)
-        """
-        if unlocked_cb:
-            unlocked_cb()
+            platformService = IPlatform.get_service(args)
+            if platformService:
+                if not os.path.exists(apps_dir):
+                    os.mkdir(apps_dir)
+                    os.chmod(apps_dir, 0o700)
+                appsList = platformService.getAppsInfo()
+                for app in appsList:
+                    makeDesktopFile(app)
+                multiwin = platformService.getprop("persist.openfde.multi_windows", "false")
+                if multiwin == "false":
+                    makeWaydroidDesktopFile(False)
+                else:
+                    makeWaydroidDesktopFile(True)
+            """
+            if unlocked_cb:
+                unlocked_cb()
+
+        threading.Thread(target=do_work, name=f"userUnlocked-{uid}", daemon=True).start()
 
     def packageStateChanged(mode, packageName, uid):
         logging.debug("packageStateChanged mode: {}, packageName: {}".format(mode, packageName))
