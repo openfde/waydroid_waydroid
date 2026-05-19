@@ -398,7 +398,7 @@ def start(args):
                        deviceClass = '0x00000000'
                        for line in deviceInfo.split('\n'):
                           if 'Class:' in line:
-                              deviceClass = line.split(':', 1)[1].strip()
+                              deviceClass = line.split()[1].strip()
                               break
                        triggerEvent(CallBackEvents.DEVICE_PROPERTY_CHANGED.value, json.dumps({
                            'mac': mac,
@@ -441,7 +441,7 @@ def start(args):
                     deviceInfo = self.sendCommand("info " + mac)
                     for oneLine in deviceInfo.split('\n'):
                        if 'Class:' in oneLine:
-                           deviceClass = oneLine.split(':', 1)[1].strip()
+                           deviceClass = oneLine.split()[1].strip()
                            break
                     uuids = re.findall(patterns['UUIDs'], deviceInfo, re.IGNORECASE)
                     self.devices[mac] = {
@@ -810,7 +810,7 @@ def start(args):
         deviceInfo = initData['controller'].sendCommand("info " + event.data['mac'])
         for line in deviceInfo.split('\n'):
            if 'Class:' in line:
-               deviceClass = line.split(':', 1)[1].strip()
+               deviceClass = line.split()[1].strip()
                break
         triggerEvent(CallBackEvents.DEVICE_PROPERTY_CHANGED.value, json.dumps({
             'mac': event.data['mac'],
