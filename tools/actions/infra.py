@@ -9,7 +9,7 @@ import signal
 from tools.helpers.inotify import InotifyRecursiveWatcher
 import threading
 
-
+dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
 class DbusInfraManager(dbus.service.Object):
   def __init__(self, looper, bus, object_path, args):
@@ -60,6 +60,47 @@ class DbusInfraManager(dbus.service.Object):
   def StopMonitor(self):
       stopMonitor(self)
 
+   # =========================
+  # Method
+  # =========================
+  @dbus.service.method(
+      "com.openfde.Infra",
+      in_signature='',
+      out_signature='s'
+  )
+  def GetNetworkState(self):
+
+      return "connected"
+
+
+  # =========================
+  # Signal
+  # =========================
+  @dbus.service.signal(
+      "com.openfde.Infra",
+      signature='ss'
+  )
+  def NetworkStateChanged(self, state, iface):
+      """
+      网络状态变化 signal
+      """
+      pass    
+
+    # =========================
+    # emit signal
+    # =========================
+  # def emit_network_changed(self, state, iface):
+
+  #     logging.info(
+  #         f"emit NetworkStateChanged "
+  #         f"{state} {iface}"
+  #     )
+
+  #     self.NetworkStateChanged(
+  #         state,
+  #         iface
+  #     )    
+
 
 def stopMonitor(self):
       logging.info("infra stop monitor")
@@ -85,9 +126,46 @@ def stopMonitor(self):
       except Exception:
         logging.exception("Failed to stop monitors")
 
+ 
+
+
+def properties_changed(
+        interface,
+        changed_properties,
+        invalidated_properties):
+
+    logging.info("NM PropertiesChanged")
+
+    if "Connectivity" in changed_properties:
+
+        connectivity = int(
+            changed_properties["Connectivity"]
+        )
+        logging.info(f"NM PropertiesChanged {connectivity}")
+        if connectivity == 4:
+            state = "connected"
+        else:
+            state = "disconnected"
+
+        logging.info(f"NM PropertiesChanged state {state}")  
+        # service.emit_network_changed(
+        #     state,
+        #     "wlan0"
+        # )
+
+
+bus = dbus.SystemBus()
+
 def service(args, looper):
-  dbus_obj = DbusInfraManager(looper, dbus.SystemBus(), '/InfraManager', args)
+  dbus_obj = DbusInfraManager(looper, bus, '/InfraManager', args)
   looper.run()
+
+bus.add_signal_receiver(
+    properties_changed,
+    signal_name="PropertiesChanged",
+    dbus_interface="org.freedesktop.DBus.Properties",
+    path="/org/freedesktop/NetworkManager"
+)  
 
 def stop(args, quit_session=True):
   try:
@@ -101,7 +179,7 @@ def stop(args, quit_session=True):
 
 def start(args):
   try:
-    name = dbus.service.BusName("com.openfde.Infra", dbus.SystemBus(), do_not_queue=True)
+    name = dbus.service.BusName("com.openfde.Infra", bus, do_not_queue=True)
   except dbus.exceptions.NameExistsException:
     logging.error("Infra service is already running")
     return
