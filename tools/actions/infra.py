@@ -8,7 +8,8 @@ import logging
 import signal
 from tools.helpers.inotify import InotifyRecursiveWatcher
 import threading
-
+from tools.interfaces import IPlatform
+import argparse
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
 class DbusInfraManager(dbus.service.Object):
@@ -134,7 +135,20 @@ def properties_changed(
         changed_properties,
         invalidated_properties):
 
-    logging.info("NM PropertiesChanged")
+    args = argparse.Namespace(
+              config = "/var/lib/waydroid/waydroid.cfg",
+            )
+    platformService = IPlatform.get_service(args)
+    if("State") in changed_properties:
+        state = int(changed_properties["State"])
+        logging.info(f"State: {state}" )
+        platformService.netMonitor("State",str(state))
+
+    if("PrimaryConnectionType") in changed_properties:
+        type = changed_properties["PrimaryConnectionType"]
+        logging.info(f"type: {type}")
+        platformService.netMonitor("type",str(type))
+
 
     if "Connectivity" in changed_properties:
 
@@ -142,12 +156,13 @@ def properties_changed(
             changed_properties["Connectivity"]
         )
         logging.info(f"NM PropertiesChanged {connectivity}")
+        platformService.netMonitor("connectivity",str(connectivity))
         if connectivity == 4:
-            state = "connected"
+            netStatus = "connected"
         else:
-            state = "disconnected"
+            netStatus = "disconnected"
 
-        logging.info(f"NM PropertiesChanged state {state}")  
+        logging.info(f"NM PropertiesChanged netStatus {netStatus}")   
         # service.emit_network_changed(
         #     state,
         #     "wlan0"
@@ -159,6 +174,7 @@ bus = dbus.SystemBus()
 def service(args, looper):
   dbus_obj = DbusInfraManager(looper, bus, '/InfraManager', args)
   looper.run()
+
 
 bus.add_signal_receiver(
     properties_changed,
