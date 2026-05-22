@@ -317,7 +317,7 @@ def start(args):
         physicalEthernets = getLans()
         physicalWlans = run_nmcli_command("nmcli -g device,type device status |grep ':wifi'|grep -v ':wifi-p2p'|awk -F: '{print$1}'")
         if physicalWlans == "success":
-            logging.debug("physicalWlans: null")
+            # logging.debug("physicalWlans: null")
             physicalWlans = ''
         elif physicalWlans:
             logging.verbose("physicalWlans: " + physicalWlans)
