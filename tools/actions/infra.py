@@ -159,8 +159,13 @@ def properties_changed(
 
 bus = dbus.SystemBus()
 infra_service = None
+infra_bus_name = None
+infra_mainloop = None
+infra_signal_handler = None
 
 def service(args, looper):
+  global infra_service
+  
   infra_service = DbusInfraManager(looper, bus, '/InfraManager', args)
   looper.run()
 
@@ -168,20 +173,63 @@ def service(args, looper):
  
 
 def stop(args, quit_session=True):
+  global infra_service
+  global infra_bus_name
+  global infra_mainloop
+  global infra_signal_handler
   try:
+     if infra_service:
+         infra_service.stopMonitor()
+  except Exception:
+        logging.exception("stopMonitor failed")
+
+  try:
+      if infra_signal_handler:
+            bus.remove_signal_receiver(
+                infra_signal_handler,
+                signal_name="PropertiesChanged",
+                dbus_interface="org.freedesktop.DBus.Properties",
+                path="/org/freedesktop/NetworkManager"
+            )
+            infra_signal_handler = None
+  except Exception:
+        logging.exception("remove signal receiver failed")
+
+  try:
+        if infra_service:
+            infra_service.remove_from_connection()
+            infra_service = None
+  except Exception:
+        logging.exception("remove dbus object failed")    
+
+
+  try:
+      logging.info("Infra service is stop........")
       services.hardware_manager.stop(args)
+      infra_bus_name = None
   except:
       pass
   try:
       services.task_manager.stop(args)
   except:
       pass
+  try:
+        if infra_mainloop:
+            infra_mainloop.quit()
+            infra_mainloop = None
+  except Exception:
+        logging.exception("mainloop quit failed")
+
 
 def start(args):
+  global infra_bus_name
+  global infra_mainloop
+  global infra_signal_handler
   try:
-    name = dbus.service.BusName("com.openfde.Infra", bus, do_not_queue=True)
+    infra_bus_name = dbus.service.BusName("com.openfde.Infra", bus, do_not_queue=True)
+    infra_signal_handler = partial(properties_changed, args)
     bus.add_signal_receiver(
-        partial(properties_changed, args),
+        infra_signal_handler,
         signal_name="PropertiesChanged",
         dbus_interface="org.freedesktop.DBus.Properties",
         path="/org/freedesktop/NetworkManager"
@@ -189,13 +237,16 @@ def start(args):
   except dbus.exceptions.NameExistsException:
     logging.error("Infra service is already running")
     return
-  mainloop = GLib.MainLoop()
+  infra_mainloop = GLib.MainLoop()
   def sigint_handler(data):
       stop(args)
-      mainloop.quit()
+      infra_mainloop.quit()
+
   GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGINT, sigint_handler, None)
+  GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGHUP, sigint_handler, None)
   GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGTERM, sigint_handler, None)
-  service(args, mainloop)
+#   GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGUSR1, sigusr_handler, None)
+  service(args, infra_mainloop)
 
 def do_start(args):
   services.task_manager.start(args)
