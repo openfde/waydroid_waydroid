@@ -18,16 +18,19 @@ import json
 
 import subprocess
 
+from tools.helpers.net import FdeNetService
 
 from tools import helpers
 from tools.interfaces import INet
 
-
-
-
-
-
 def start(args):
+    args.netservice = FdeNetService()
+    if(args.netservice is  None):
+        logging.info("FdeNetService is  null..")
+    else:    
+        args.netservice.start(args)    
+
+
     def run_nmcli_command(command):
         try:
             #logging.debug(command)
@@ -336,7 +339,7 @@ def start(args):
         ret = ''
         physicalLans = run_nmcli_command('''nmcli -g device,type device status |grep ':ethernet'|awk -F: '{print$1}' | grep -v "`ls /sys/devices/virtual/net/`"''')
         if physicalLans == "success":
-            logging.debug("physicalLans: success")
+            logging.debug("physicalLans: null")
         elif physicalLans:
             logging.verbose("physicalLans: " + physicalLans)
             physicalLansList = physicalLans.split('\n')
@@ -493,6 +496,7 @@ def start(args):
 def stop(args):
     global stopping
     stopping = True
+    args.netservice = None
     try:
         if args.netLoop:
             args.netLoop.quit()

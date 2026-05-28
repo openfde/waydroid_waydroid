@@ -15,9 +15,7 @@ import dbus.exceptions
 from gi.repository import GLib
 import copy
 import subprocess
-from tools.helpers.net import FdeNetService
 import threading
-from tools.interfaces import IPlatform
 
 class DbusSessionManager(dbus.service.Object):
     def __init__(self, looper, bus, object_path, args):
@@ -97,18 +95,6 @@ def start(args, unlocked_cb=None, background=True):
     session["background_start"] = "true" if background else "false"
 
     mainloop = GLib.MainLoop()
-
-    netservice = FdeNetService()
-    if(netservice is  None):
-        logging.info("FdeNetService is  null..")
-    else:
-        t = threading.Thread(
-        target=netservice.start,
-        args=(args,),
-        name=f"netservice-thread",
-        daemon=False,
-        )
-        t.start()
 
     def sigint_handler(data):
         do_stop(args, mainloop)
