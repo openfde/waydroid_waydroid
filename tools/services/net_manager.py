@@ -336,7 +336,7 @@ def start(args):
         ret = ''
         physicalLans = run_nmcli_command('''nmcli -g device,type device status |grep ':ethernet'|awk -F: '{print$1}' | grep -v "`ls /sys/devices/virtual/net/`"''')
         if physicalLans == "success":
-            # logging.debug("physicalLans: null")
+            logging.debug("physicalLans: success")
         elif physicalLans:
             logging.verbose("physicalLans: " + physicalLans)
             physicalLansList = physicalLans.split('\n')
