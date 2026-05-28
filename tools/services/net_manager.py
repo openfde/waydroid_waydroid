@@ -22,10 +22,10 @@ import subprocess
 from tools import helpers
 from tools.interfaces import INet
 
-stopping = False
-WifiStatusDisable = 0
-WifiStatusEnable = 1
-WifiStatusNoDevice = 2
+
+
+
+
 
 def start(args):
     def run_nmcli_command(command):
@@ -317,7 +317,7 @@ def start(args):
         physicalEthernets = getLans()
         physicalWlans = run_nmcli_command("nmcli -g device,type device status |grep ':wifi'|grep -v ':wifi-p2p'|awk -F: '{print$1}'")
         if physicalWlans == "success":
-            logging.debug("physicalWlans: null")
+            # logging.debug("physicalWlans: null")
             physicalWlans = ''
         elif physicalWlans:
             logging.verbose("physicalWlans: " + physicalWlans)
@@ -336,7 +336,7 @@ def start(args):
         ret = ''
         physicalLans = run_nmcli_command('''nmcli -g device,type device status |grep ':ethernet'|awk -F: '{print$1}' | grep -v "`ls /sys/devices/virtual/net/`"''')
         if physicalLans == "success":
-            logging.debug("physicalLans: null")
+            # logging.debug("physicalLans: null")
         elif physicalLans:
             logging.verbose("physicalLans: " + physicalLans)
             physicalLansList = physicalLans.split('\n')
