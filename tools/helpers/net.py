@@ -114,7 +114,6 @@ class FdeNetService:
                 "service already running"
             )
             return
-
         logging.info("service start")
 
         #
@@ -123,7 +122,6 @@ class FdeNetService:
         dbus.mainloop.glib.DBusGMainLoop(
             set_as_default=True
         )
-
         #
         # SystemBus
         #
@@ -140,23 +138,17 @@ class FdeNetService:
         #
         self.bus.add_signal_receiver(
             self.signal_handler,
-
             signal_name="PropertiesChanged",
-
             dbus_interface=PROP_IFACE,
-
             bus_name=NM_BUS_NAME,
-
             path=NM_PATH
         )
 
         logging.info("add_signal_receiver success")
-
         #
         # MainLoop
         #
         self.mainloop = GLib.MainLoop()
-
         #
         # Unix signals
         #
@@ -180,9 +172,7 @@ class FdeNetService:
             self.on_sigterm,
             None
         )
-
         self.running = True
-
         self.mainloop.run()
 
     # =====================================================
@@ -198,52 +188,37 @@ class FdeNetService:
         # remove signal receiver
         #
         if self.bus and self.signal_handler:
-
             try:
-
                 self.bus.remove_signal_receiver(
                     self.signal_handler,
-
                     signal_name="PropertiesChanged",
-
                     dbus_interface=PROP_IFACE,
-
                     bus_name=NM_BUS_NAME,
-
                     path=NM_PATH
                 )
-
 
             except Exception:
 
                 logging.exception(
                     "remove_signal_receiver failed"
                 )
-
             self.signal_handler = None
 
         #
         # quit mainloop
         #
         if self.mainloop:
-
             try:
-
                 self.mainloop.quit()
-
             except Exception:
-
                 logging.exception(
                     "mainloop quit failed"
                 )
-
             self.mainloop = None
-
         #
         # release bus
         #
         self.bus = None
-
         self.running = False
 
     # =====================================================
@@ -252,9 +227,7 @@ class FdeNetService:
 
   def on_sigint(self, data):
         logging.info("on_sigint..........")
-
         self.stop()
-
         return False
 
     # =====================================================
@@ -263,7 +236,5 @@ class FdeNetService:
 
   def on_sigterm(self, data):
         logging.info("on_sigterm..........")
-
         self.stop()
-
         return False
