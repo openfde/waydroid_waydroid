@@ -314,6 +314,7 @@ def make_base_props(args):
 
     egl = tools.helpers.props.host_get(args, "ro.hardware.egl")
     dri, _ = tools.helpers.gpu.getDriNode(args)
+    vulkan = " "
 
     gralloc = find_hal("gralloc")
     if not gralloc:
