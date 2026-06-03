@@ -356,6 +356,17 @@ def make_base_props(args):
         share_shortcut = tools.helpers.props.file_get(args,"/etc/fde.d/fde.conf","share_shortcut")
         if share_shortcut == "false":
             props.append("fde.app_fusion=0")
+    has_battery = False
+    for type_file in glob.glob(os.path.join(supply, "*", "type")):
+        try:
+            with open(type_file, "r") as f:
+                if f.read().strip() == "Battery":
+                    has_battery = True
+                    break
+        except OSError:
+            continue
+    if not has_battery:
+        props.append("fde.battery=0")
 
     media_profiles = tools.helpers.props.host_get(args, "media.settings.xml")
     if media_profiles != "":
