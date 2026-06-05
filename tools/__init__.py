@@ -72,6 +72,7 @@ def main():
             if args.subaction == "start":
                 actions.session_manager.start(args)
             elif args.subaction == "stop":
+                # actions.infra.stop(args)
                 actions.session_manager.stop(args)
             else:
                 logging.info(
@@ -87,6 +88,7 @@ def main():
                         return 1
                 actions.container_manager.start(args)
             elif args.subaction == "stop":
+                # actions.infra.stop(args)
                 actions.container_manager.stop(args)
             elif args.subaction == "restart":
                 actions.container_manager.restart(args)
