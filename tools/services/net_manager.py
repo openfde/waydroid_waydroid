@@ -28,13 +28,13 @@ def start(args):
     if(args.netservice is  None):
         logging.info("FdeNetService is  null..")
     else:
-        t = threading.Thread(
+        args.t = threading.Thread(
         target=args.netservice.start,
         args=(args,),
         name=f"netservice-thread",
         daemon=False,
         )
-        t.start()
+        args.t.start()
 
     def run_nmcli_command(command):
         try:
@@ -503,7 +503,13 @@ def stop(args):
     stopping = True
     args.netservice = None
     try:
+        if args.t:
+            args.t.stop()
+    except Exception as e:
+        logging.debug("net service is stop error")    
+    try:
         if args.netLoop:
             args.netLoop.quit()
     except AttributeError:
         logging.debug("net service is not even started")
+
