@@ -15,13 +15,15 @@ import dbus.exceptions
 from gi.repository import GLib
 import copy
 import subprocess
+import threading
+from tools.interfaces import IPlatform
 
 class DbusSessionManager(dbus.service.Object):
     def __init__(self, looper, bus, object_path, args):
         self.args = args
         self.looper = looper
         dbus.service.Object.__init__(self, bus, object_path)
-
+        
     @dbus.service.method("id.waydro.SessionManager", in_signature='', out_signature='')
     def Stop(self):
         do_stop(self.args, self.looper)

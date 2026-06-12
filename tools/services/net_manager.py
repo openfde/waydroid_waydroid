@@ -18,16 +18,24 @@ import json
 
 import subprocess
 
+from tools.helpers.net import FdeNetService
 
 from tools import helpers
 from tools.interfaces import INet
 
-stopping = False
-WifiStatusDisable = 0
-WifiStatusEnable = 1
-WifiStatusNoDevice = 2
-
 def start(args):
+    args.netservice = FdeNetService()
+    if(args.netservice is  None):
+        logging.info("FdeNetService is  null..")
+    else:
+        args.t = threading.Thread(
+        target=args.netservice.start,
+        args=(args,),
+        name=f"netservice-thread",
+        daemon=False,
+        )
+        args.t.start()
+
     def run_nmcli_command(command):
         try:
             #logging.debug(command)
@@ -493,8 +501,15 @@ def start(args):
 def stop(args):
     global stopping
     stopping = True
+    args.netservice = None
+    try:
+        if args.t:
+            args.t.stop()
+    except Exception as e:
+        logging.debug("net service is stop error")    
     try:
         if args.netLoop:
             args.netLoop.quit()
     except AttributeError:
         logging.debug("net service is not even started")
+

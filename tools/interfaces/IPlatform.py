@@ -27,7 +27,6 @@ TRANSACTION_sendKeyEventt = 15
 TRANSACTION_stopApp = 16
 TRANSACTION_compatbileGet = 17
 TRANSACTION_compatbileSet = 18
-TRANSACTION_netMonitor = 19
 
 class IPlatform:
     def __init__(self, remote):
@@ -244,22 +243,7 @@ class IPlatform:
             reader = reply.init_reader()
             status, exception = reader.read_int32()
             if exception != 0:
-                logging.error("Failed with code: {}".format(exception))      
-
-    def netMonitor(self, arg1,arg2):
-        request = self.client.new_request()
-        request.append_string16(arg1)
-        request.append_string16(arg2)
-        reply, status = self.client.transact_sync_reply(
-            TRANSACTION_netMonitor, request)
-
-        if status:
-            logging.error("Sending reply failed")
-        else:
-            reader = reply.init_reader()
-            status, exception = reader.read_int32()
-            if exception != 0:
-                logging.error("Failed with code: {}".format(exception))                                
+                logging.error("Failed with code: {}".format(exception))                       
 
     def launchIntent(self, arg1, arg2):
         request = self.client.new_request()
