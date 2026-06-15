@@ -357,6 +357,7 @@ def make_base_props(args):
         if share_shortcut == "false":
             props.append("fde.app_fusion=0")
     has_battery = False
+    supply = "/sys/class/power_supply"
     for type_file in glob.glob(os.path.join(supply, "*", "type")):
         try:
             with open(type_file, "r") as f:
