@@ -26,6 +26,7 @@ def getVulkanDriver(args, dev):
         "amdgpu": "radeon",
         "radeon": "radeon",
         "panfrost": "panfrost",
+        "panthor": "panfrost",
         "msm": "freedreno",
         "vc4": "broadcom",
         "v3d": "broadcom",
