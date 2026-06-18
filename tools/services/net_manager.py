@@ -499,14 +499,16 @@ def start(args):
     args.net_manager.start()
 
 def stop(args):
-    global stopping
-    stopping = True
-    args.netservice = None
     try:
         if args.t:
-            args.t.stop()
+            args.netservice.stop()
+            args.t.join()
     except Exception as e:
-        logging.debug("net service is stop error")    
+        logging.exception("net service stop error!")
+        
+    global stopping
+    stopping = True
+    args.netservice = None    
     try:
         if args.netLoop:
             args.netLoop.quit()
