@@ -23,6 +23,12 @@ from tools.helpers.net import FdeNetService
 from tools import helpers
 from tools.interfaces import INet
 
+stopping = False
+WifiStatusDisable = 0
+WifiStatusEnable = 1
+WifiStatusNoDevice = 2
+
+
 def start(args):
     args.netservice = FdeNetService()
     if(args.netservice is  None):
