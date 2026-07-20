@@ -5,6 +5,7 @@ import os
 import glob
 import fcntl
 import struct
+import stat
 import tools.config
 import tools.helpers.run
 
@@ -25,6 +26,38 @@ HWBINDER_DRIVERS = [
     "hwbonder",
 ]
 
+
+def createAshmemAppendBootId():
+    ashmemDevPath = "/dev/ashmem"
+    if not os.path.exists(ashmemDevPath):
+        return None
+    bootIdPath = "/proc/sys/kernel/random/boot_id"
+    try:
+        with open(bootIdPath, 'r') as f:
+            bootId = f.read().strip()
+    except Exception as e:
+        return None
+
+    if not bootId:
+        return None
+
+    ashmemDevAppendBootIdPath = f"{ashmemDevPath}{bootId}"
+    if os.path.exists(ashmemDevAppendBootIdPath):
+        return bootId
+
+    st = os.stat(ashmemDevPath)
+    major = os.major(st.st_rdev)
+    minor = os.minor(st.st_rdev)
+    devNum = os.makedev(major, minor)
+    mode = stat.S_IFCHR | 0o666
+
+    try:
+        os.mknod(ashmemDevAppendBootIdPath, mode, devNum)
+        os.chmod(ashmemDevAppendBootIdPath, 0o666)
+        return bootId
+    except Exception as e:
+        logging.error(f"mknod failed: {e}")
+        return None
 
 def isBinderfsLoaded(args):
     with open("/proc/filesystems", "r") as handle:

@@ -11,6 +11,7 @@ import platform
 import gbinder
 import tools.config
 import tools.helpers.run
+import tools.helpers.drivers
 
 def get_lxc_version(args):
     if shutil.which("lxc-info") is not None:
@@ -122,6 +123,7 @@ def generate_nodes_lxc_config(args):
     make_entry("tmpfs", "tmp", "tmpfs", "nodev 0 0", False)
     make_entry("tmpfs", "var", "tmpfs", "nodev 0 0", False)
     make_entry("tmpfs", "run", "tmpfs", "nodev 0 0", False)
+    make_entry("tmpfs", "metadata", "tmpfs", "nodev 0 0", False)
 
     # NFC config
     make_entry("/system/etc/libnfc-nci.conf", options="bind,optional 0 0")
@@ -132,6 +134,7 @@ def generate_nodes_lxc_config(args):
     # apex need
     make_entry("/dev/loop-control")
     make_entry("/dev", "dev/block", options="rbind,create=dir,optional 0 0")
+    make_entry("/dev/input", options="rbind,create=dir,optional 0 0")
     return nodes
 
 LXC_APPARMOR_PROFILE = "lxc-waydroid"
@@ -241,7 +244,7 @@ def generate_session_lxc_config(args, session):
             logging.warning("User-provided mount path contains illegal character: " + src)
             return False
         if dist is None and (not os.path.exists(src) or
-                             str(os.stat(src).st_uid) != session["user_id"]):
+                             (str(os.stat(src).st_uid) != session["user_id"] and ("/dev/ashmem" not in src ))):
             logging.warning("User-provided mount path is not owned by user: " + src)
             return False
         return add_node_entry(nodes, src, dist, mnt_type, options, check=False)
@@ -266,10 +269,13 @@ def generate_session_lxc_config(args, session):
 
     if not make_entry(session["waydroid_data"], "data", options="rbind 0 0"):
         raise OSError("Failed to bind userdata")
-    if not make_entry("/var/lib/fde/volumes", "volumes", options="rbind 0 0"):
-        raise OSError("Failed to bind volumes")
+    #if not make_entry("/var/lib/fde/volumes", "volumes", options="rbind 0 0"):
+    #    raise OSError("Failed to bind volumes")
     if not make_entry("/var/lib/fde/sockets", "sockets", options="bind,create=dir 0 0"):
         raise OSError("Failed to bind sockets")
+    BootId = tools.helpers.drivers.createAshmemAppendBootId()
+    if not (BootId and make_entry(f"/dev/ashmem{BootId}")):
+        raise OSError("Failed to createAshmemAppendBootId")
 
     lxc_path = tools.config.defaults["lxc"] + "/waydroid"
     config_nodes_tmp_path = args.work + "/config_session"
@@ -337,7 +343,7 @@ def make_base_props(args):
                     gralloc = "default"
                     egl = "angle"
                 else:
-                    gralloc = "gbm"
+                    gralloc = "minigbm_gbm_mesa"
                     egl = "mesa"
         else:
             gralloc = "default"

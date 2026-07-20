@@ -61,7 +61,7 @@ session_defaults = {
     "x11_display": str(os.environ.get('DISPLAY')),
     "pulse_runtime_path": str(os.environ.get('PULSE_RUNTIME_PATH')),
     "pulse_cookie_path": os.path.expanduser("~") + "/.config/pulse/cookie",
-    "xdg_session_type": str(os.environ.get('XDG_SESSION_TYPE')),
+    "xdg_session_type": "wayland",#str(os.environ.get('XDG_SESSION_TYPE')),
     "state": "STOPPED",
     "lcd_density": "0",
     "background_start": "true",
@@ -70,7 +70,7 @@ session_defaults = {
 }
 session_defaults["config_path"] = defaults["work"] + "/session.cfg"
 session_defaults["waydroid_data"] = session_defaults["xdg_data_home"] + \
-    "/openfde14"
+    "/openfde17"
 session_defaults["waydroid_data_icons"] = session_defaults["waydroid_data"] + "/icons"
 if session_defaults["pulse_runtime_path"] == "None":
     session_defaults["pulse_runtime_path"] = session_defaults["xdg_runtime_dir"] + "/pulse"
