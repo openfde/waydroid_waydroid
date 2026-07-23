@@ -107,9 +107,6 @@ def set_permissions(args, perm_list=None, mode="777"):
         # brightness
         perm_list.extend(glob.glob("/dev/i2c-*"))
         perm_list.extend(glob.glob("/sys/class/backlight/*/brightness"))
-        #temp need
-        perm_list.extend(glob.glob("/dev/input/event*"))
-        perm_list.extend(glob.glob("/dev/input/m*"))
 
     for path in perm_list:
         chmod(path, mode)

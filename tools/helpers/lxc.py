@@ -134,7 +134,6 @@ def generate_nodes_lxc_config(args):
     # apex need
     make_entry("/dev/loop-control")
     make_entry("/dev", "dev/block", options="rbind,create=dir,optional 0 0")
-    make_entry("/dev/input", options="rbind,create=dir,optional 0 0")
     return nodes
 
 LXC_APPARMOR_PROFILE = "lxc-waydroid"
