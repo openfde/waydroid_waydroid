@@ -22,9 +22,15 @@ def set_aidl_version(args):
     elif android_api < 31:
         binder_protocol = "aidl3"
         sm_protocol =     "aidl3"
-    else:
+    elif android_api == 34:
         binder_protocol = "aidl3"
         sm_protocol =     "aidl3"
+    elif android_api == 37:
+        binder_protocol = "aidl3"
+        sm_protocol =     "aidl6"
+    else:
+        binder_protocol = "aidl3"
+        sm_protocol =     "aidl6"
 
     cfg["waydroid"]["binder_protocol"] = binder_protocol
     cfg["waydroid"]["service_manager_protocol"] = sm_protocol
