@@ -358,6 +358,7 @@ class IPlatform:
 def get_service(args):
     helpers.drivers.loadBinderNodes(args)
     try:
+        self.isrunning = True
         serviceManager = gbinder.ServiceManager("/dev/" + args.BINDER_DRIVER, args.SERVICE_MANAGER_PROTOCOL, args.BINDER_PROTOCOL)
     except TypeError:
         serviceManager = gbinder.ServiceManager("/dev/" + args.BINDER_DRIVER)
@@ -372,9 +373,9 @@ def get_service(args):
 
     remote, status = serviceManager.get_service_sync(SERVICE_NAME)
     while(not remote):
-        if tries > 0:
+        if tries > 0 :
             logging.warning(
-                "Failed to get service {}, trying again...".format(SERVICE_NAME))
+                "Failed to get service {}, trying again...".format(SERVICE_NAME) +" ,isrunning: "+self.isrunning)
             time.sleep(1)
             remote, status = serviceManager.get_service_sync(SERVICE_NAME)
             tries = tries - 1
@@ -382,6 +383,9 @@ def get_service(args):
             return None
 
     return IPlatform(remote)
+
+def remove_service():
+    self.isrunning = False
 
 # Like ServiceManager.wait() but can be interrupted
 def wait_for_manager(sm):

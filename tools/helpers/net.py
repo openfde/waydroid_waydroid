@@ -90,13 +90,15 @@ class FdeNetService:
     if("State") in changed_properties:
         state = int(changed_properties["State"])
         logging.info(f"NetState---> {state}" )
-        self.platformService.settingsPutString(1, "NetState", str(state))
+        if self.platformService:
+            self.platformService.settingsPutString(1, "NetState", str(state))
 
     #802-3-ethernet  、 802-11-wireless
     if("PrimaryConnectionType") in changed_properties:
         type = changed_properties["PrimaryConnectionType"]
         logging.info(f"NetType---> {type}")
-        self.platformService.settingsPutString(1,"NetType",str(type))
+        if self.platformService:
+            self.platformService.settingsPutString(1,"NetType",str(type))
 
         
     # =====================================================
@@ -105,9 +107,11 @@ class FdeNetService:
 
   def start(self, args):
         try:
+            logging.info("service start....111111111111111....")
             self.platformService = IPlatform.get_service(args)
+            logging.info("service start....2222222222222....")
         except:
-            logging.error("platformService not available")
+            logging.info("platformService not available")
             return 
         if self.running:
             logging.warning(
