@@ -109,7 +109,6 @@ class FdeNetService:
 
   def start(self, args):
         try:
-            logging.info("service start....111111111111111....")
             self.platformService = IPlatform.get_service(args)
             if not self.platformService:
                 logging.info("platformService is null....")
@@ -201,7 +200,6 @@ class FdeNetService:
   def stop(self):
         logging.info("service stop........")
         IPlatform.remove_service()
-        logging.info("service stop......3..")
         if not self.running:
             return
 
