@@ -387,7 +387,7 @@ def get_service(args):
 
     return IPlatform(remote)
 
-def remove_service():
+def stop_trying():
     global running
     running = False
 

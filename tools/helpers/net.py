@@ -199,7 +199,7 @@ class FdeNetService:
 
   def stop(self):
         logging.info("service stop........")
-        IPlatform.remove_service()
+        IPlatform.stop_trying()
         if not self.running:
             return
 
