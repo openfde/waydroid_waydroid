@@ -28,6 +28,8 @@ TRANSACTION_stopApp = 16
 TRANSACTION_compatbileGet = 17
 TRANSACTION_compatbileSet = 18
 
+running = False
+
 class IPlatform:
     def __init__(self, remote):
         self.client = gbinder.Client(remote, INTERFACE)
@@ -369,12 +371,14 @@ def get_service(args):
             return None
 
     tries = 1000
+    global running
+    running = True
 
     remote, status = serviceManager.get_service_sync(SERVICE_NAME)
     while(not remote):
-        if tries > 0:
+        if tries > 0 and running:
             logging.warning(
-                "Failed to get service {}, trying again...".format(SERVICE_NAME))
+                "Failed to get service {}, trying again...".format(SERVICE_NAME) +" ,isrunning: "+str(running))
             time.sleep(1)
             remote, status = serviceManager.get_service_sync(SERVICE_NAME)
             tries = tries - 1
@@ -382,6 +386,10 @@ def get_service(args):
             return None
 
     return IPlatform(remote)
+
+def stop_trying():
+    global running
+    running = False
 
 # Like ServiceManager.wait() but can be interrupted
 def wait_for_manager(sm):
