@@ -96,7 +96,6 @@ def stop(args, quit_session=True):
       pass
   try:
       services.task_manager.stop(args)
-      services.net_manager.stop(args)
   except:
       pass
 
@@ -116,6 +115,5 @@ def start(args):
   service(args, mainloop)
 
 def do_start(args):
-  services.net_manager.start(args)
   services.task_manager.start(args)
   services.hardware_manager.start(args)
