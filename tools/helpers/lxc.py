@@ -342,7 +342,7 @@ def make_base_props(args):
                     gralloc = "default"
                     egl = "angle"
                 else:
-                    gralloc = "minigbm_gbm_mesa"
+                    gralloc = "gbm"
                     egl = "mesa"
         else:
             gralloc = "default"
