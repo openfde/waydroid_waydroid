@@ -124,6 +124,7 @@ def generate_nodes_lxc_config(args):
     make_entry("tmpfs", "var", "tmpfs", "nodev 0 0", False)
     make_entry("tmpfs", "run", "tmpfs", "nodev 0 0", False)
     make_entry("tmpfs", "metadata", "tmpfs", "nodev 0 0", False)
+    make_entry("/tmp/.X11-unix", "tmpx11", options="bind,optional,create=dir 0 0", check=False)
 
     # NFC config
     make_entry("/system/etc/libnfc-nci.conf", options="bind,optional 0 0")
