@@ -333,11 +333,11 @@ fde_stop() {
 # See how we were called.
 case "$1" in
     start)
-        start
+        fde_start
     ;;
 
     stop)
-        stop
+        fde_stop
     ;;
 
     restart|reload|force-reload)
