@@ -51,8 +51,8 @@ def start(args, unlocked_cb=None, background=True):
                 logging.warning(f"Failed to add xhost rule for localuser: {e}")
                 subprocess.run(['xhost', '+'], check=False)
     session = copy.copy(tools.config.session_defaults)
-    #if os.environ.get("XDG_SESSION_TYPE") == "wayland":
-    if os.environ.get("XDG_SESSION_TYPE") == "x11":
+    if os.environ.get("XDG_SESSION_TYPE") == "wayland":
+    #if os.environ.get("XDG_SESSION_TYPE") == "x11":
         # TODO: also support WAYLAND_SOCKET?
         wayland_display = session["wayland_display"]
         if wayland_display == "None" or not wayland_display:
