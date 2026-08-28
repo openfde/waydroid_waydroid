@@ -52,8 +52,6 @@ def start(args, unlocked_cb=None, background=True):
                 subprocess.run(['xhost', '+'], check=False)
     session = copy.copy(tools.config.session_defaults)
     if os.environ.get("XDG_SESSION_TYPE") == "wayland":
-    #if os.environ.get("XDG_SESSION_TYPE") == "x11":
-        # TODO: also support WAYLAND_SOCKET?
         wayland_display = session["wayland_display"]
         if wayland_display == "None" or not wayland_display:
             logging.warning('WAYLAND_DISPLAY is not set, defaulting to "wayland-0"')
