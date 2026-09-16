@@ -27,7 +27,8 @@ config_keys = ["arch",
                "system_datetime",
                "vendor_datetime",
                "suspend_action",
-               "mount_overlays"]
+               "mount_overlays",
+               "render_type"]
 
 # Config file/commandline default values
 # $WORK gets replaced with the actual value for args.work (which may be
@@ -44,6 +45,7 @@ defaults = {
     ],
     "suspend_action": "freeze",
     "mount_overlays": "True",
+    "render_type": "NATIVE",
 }
 defaults["images_path"] = defaults["work"] + "/images"
 defaults["rootfs"] = defaults["work"] + "/rootfs"
