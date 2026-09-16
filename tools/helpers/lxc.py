@@ -134,13 +134,17 @@ def generate_nodes_lxc_config(args):
     make_entry("/dev", "dev/block", options="rbind,create=dir,optional 0 0")
 
     #hybris
-    make_entry("tmpfs", "usr", "tmpfs", "nodev 0 0", False)
-    make_entry("/usr/lib", "usr/lib", options="rbind,create=dir,optional 0 0")
-    make_entry("/usr/lib64", "usr/lib64", options="rbind,create=dir,optional 0 0")
-    make_entry("/usr/share", "usr/share", options="rbind,create=dir,optional 0 0")
+    if args.hybris:
+        if os.path.exists("/dev/jmgpu"):
+            make_entry("/dev/jmgpu")
+        make_entry("tmpfs", "usr", "tmpfs", "nodev 0 0", False)
+        make_entry("/usr/lib", "usr/lib", options="rbind,create=dir,optional 0 0")
+        make_entry("/usr/lib64", "usr/lib64", options="rbind,create=dir,optional 0 0")
+        make_entry("/usr/share", "usr/share", options="rbind,create=dir,optional 0 0")
+        make_entry("/usr/local", "usr/local", options="rbind,create=dir,optional 0 0")
 
-    make_entry("tmpfs", "hybris", "tmpfs", "nodev 0 0", False)
-    make_entry("/etc", "hybris/etc", options="rbind,create=dir,optional 0 0")
+        make_entry("tmpfs", "hybris", "tmpfs", "nodev 0 0", False)
+        make_entry("/etc", "hybris/etc", options="rbind,create=dir,optional 0 0")
     return nodes
 
 LXC_APPARMOR_PROFILE = "lxc-waydroid"
@@ -326,7 +330,6 @@ def make_base_props(args):
     vulkan = " "
 
     gralloc = find_hal("gralloc")
-    hybris_egl_type = ""
     hybris_gbm_file = "/usr/lib/aarch64-linux-gnu/libgbm.so.1"
     hybris_lib_path = "/usr/lib/aarch64-linux-gnu/"
     if not gralloc:
@@ -341,10 +344,12 @@ def make_base_props(args):
             elif vulkan == "ranchu":
                 gralloc = "ranchu"
                 egl = "emulation"
+                if os.path.exists("/dev/jmgpu"):
+                    hybris_lib_path = "/usr/lib/aarch64-linux-gnu/mwv207/"
+                    hybris_gbm_file = "/usr/lib/aarch64-linux-gnu/mwv207/libgbm.so.1"
             elif vulkan == "FTG340":
                 gralloc = "FTG340"
                 egl = "FTG340"
-                # hybris_egl_type = "proxy"
                 if os.path.exists("/usr/lib/aarch64-linux-gnu/d3000m/libgbm.so.1"):
                     hybris_gbm_file = "/usr/lib/aarch64-linux-gnu/d3000m/libgbm.so.1"
                     hybris_lib_path = "/usr/lib/aarch64-linux-gnu/d3000m/"
@@ -357,17 +362,17 @@ def make_base_props(args):
                 else:
                     gralloc = "gbm"
                     egl = "mesa"
-                    # hybris_egl_type = "proxy"
         else:
             gralloc = "default"
             egl = "angle"
         #props.append("debug.stagefright.ccodec=0")
 
-    props.append("ro.hybris.library_path=" + hybris_lib_path)
-    if not os.path.exists("/usr/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"):
-        command = ["ln", "-s", hybris_gbm_file, "/usr/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"]
-        tools.helpers.run.user(args, command)
-    if hybris_egl_type == "proxy":
+    if args.hybris:
+        logging.info("Init render type by HYBRIS")
+        props.append("ro.hybris.library_path=" + hybris_lib_path)
+        if not os.path.exists("/usr/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"):
+            command = ["ln", "-s", hybris_gbm_file, "/usr/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"]
+            tools.helpers.run.user(args, command)
         props.append("ro.hardware.graphics.egl=proxy")
         props.append("ro.hardware.gralloc=gbm_proxy")
     else:
