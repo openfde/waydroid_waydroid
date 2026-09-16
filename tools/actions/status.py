@@ -11,6 +11,7 @@ def print_status(args):
     def print_stopped():
         print("Session:\tSTOPPED")
         print("Vendor type:\t" + cfg["waydroid"]["vendor_type"])
+        print("Render type:\t" + cfg["waydroid"]["render_type"])
 
     try:
         session = tools.helpers.ipc.DBusContainerService().GetSession()
@@ -21,6 +22,7 @@ def print_status(args):
             print("IP address:\t" + (tools.helpers.net.get_device_ip_address() or "UNKNOWN"))
             print("Session user:\t{}({})".format(session["user_name"], session["user_id"]))
             print("Wayland display:\t" + session["wayland_display"])
+            print("Render type:\t" + cfg["waydroid"]["render_type"])
         else:
             print_stopped()
     except dbus.DBusException:

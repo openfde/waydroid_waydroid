@@ -91,6 +91,10 @@ def setup_config(args):
     if args.vendor_ota != cfg["waydroid"].get("vendor_ota"):
         cfg["waydroid"]["vendor_datetime"] = tools.config.defaults["vendor_datetime"]
 
+    if args.hybris:
+        cfg["waydroid"]["render_type"] = "HYBRIS"
+    else:
+        cfg["waydroid"]["render_type"] = "NATIVE"
     cfg["waydroid"]["vendor_type"] = args.vendor_type
     cfg["waydroid"]["system_ota"] = args.system_ota
     cfg["waydroid"]["vendor_ota"] = args.vendor_ota
