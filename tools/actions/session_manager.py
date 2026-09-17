@@ -9,6 +9,7 @@ import shutil
 import tools.config
 import tools.helpers.ipc
 from tools import services
+import tools.services.p2p_manager
 import dbus
 import dbus.service
 import dbus.exceptions
@@ -132,6 +133,7 @@ def start(args, unlocked_cb=None, background=True):
     services.net_manager.start(args)
     services.light_manager.start(args)
     services.bluetooth_manager.start(args)
+    services.p2p_manager.start(args)
     service(args, mainloop)
 
 def do_stop(args, looper):
@@ -149,6 +151,7 @@ def do_stop(args, looper):
     services.net_manager.stop(args)
     services.light_manager.stop(args)
     services.bluetooth_manager.stop(args)
+    services.p2p_manager.stop(args)
     tools.helpers.ipc.DBusInfraService().StopMonitor()
     looper.quit()
 
