@@ -98,6 +98,10 @@ def stop(args, quit_session=True):
       services.task_manager.stop(args)
   except:
       pass
+  try:
+      services.p2p_manager.stop(args)
+  except:
+      pass
 
 def start(args):
   try:
@@ -117,3 +121,4 @@ def start(args):
 def do_start(args):
   services.task_manager.start(args)
   services.hardware_manager.start(args)
+  services.p2p_manager.start(args)
