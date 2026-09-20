@@ -8,35 +8,36 @@ INTERFACE = "android.openfde.IP2p"
 SERVICE_NAME = "openfdep2p"
 
 TRANSACTION_addBonjourService = 1
-TRANSACTION_addGroup = 2
-TRANSACTION_cancelConnect = 3
-TRANSACTION_p2p_stop_find = 4
-TRANSACTION_p2p_asp_provision = 5
-TRANSACTION_p2p_asp_provision_resp = 6
-TRANSACTION_p2p_connect = 7
-TRANSACTION_p2p_listen = 8
-TRANSACTION_p2p_group_remove = 9
-TRANSACTION_p2p_group_member = 10
-TRANSACTION_p2p_prov_disc = 11
-TRANSACTION_p2p_get_passphrase = 12
-TRANSACTION_p2p_serv_disc_req = 13
-TRANSACTION_p2p_serv_disc_cancel = 14
-TRANSACTION_p2p_serv_disc_resp = 15
-TRANSACTION_p2p_service_update = 16
-TRANSACTION_p2p_serv_disc_external = 17
-TRANSACTION_p2p_service_flush = 18
-TRANSACTION_p2p_service_rep = 19
-TRANSACTION_p2p_service_del = 20
-TRANSACTION_p2p_reject = 21
-TRANSACTION_p2p_invite = 22
-TRANSACTION_p2p_peers = 23
-TRANSACTION_p2p_peer = 24
-TRANSACTION_p2p_set = 25
-TRANSACTION_p2p_flush = 26
-TRANSACTION_p2p_unauthorize = 27
-TRANSACTION_p2p_presence_req = 28
-TRANSACTION_p2p_ext_listen = 29
-TRANSACTION_p2p_remove_client = 30
+TRANSACTION_p2p_find = 2
+TRANSACTION_addGroup = 3
+TRANSACTION_cancelConnect = 4
+TRANSACTION_p2p_stop_find = 5
+TRANSACTION_p2p_asp_provision = 6
+TRANSACTION_p2p_asp_provision_resp = 7
+TRANSACTION_p2p_connect = 8
+TRANSACTION_p2p_listen = 9
+TRANSACTION_p2p_group_remove = 10
+TRANSACTION_p2p_group_member = 11
+TRANSACTION_p2p_prov_disc = 12
+TRANSACTION_p2p_get_passphrase = 13
+TRANSACTION_p2p_serv_disc_req = 14
+TRANSACTION_p2p_serv_disc_cancel = 15
+TRANSACTION_p2p_serv_disc_resp = 16
+TRANSACTION_p2p_service_update = 17
+TRANSACTION_p2p_serv_disc_external = 18
+TRANSACTION_p2p_service_flush = 19
+TRANSACTION_p2p_service_rep = 20
+TRANSACTION_p2p_service_del = 21
+TRANSACTION_p2p_reject = 22
+TRANSACTION_p2p_invite = 23
+TRANSACTION_p2p_peers = 24
+TRANSACTION_p2p_peer = 25
+TRANSACTION_p2p_set = 26
+TRANSACTION_p2p_flush = 27
+TRANSACTION_p2p_unauthorize = 28
+TRANSACTION_p2p_presence_req = 29
+TRANSACTION_p2p_ext_listen = 30
+TRANSACTION_p2p_remove_client = 31
 
 
 def _read_byte_array(reader):
@@ -92,6 +93,7 @@ def add_service(
     p2p_presence_req,
     p2p_ext_listen,
     p2p_remove_client,
+    p2p_find,
 ):
     helpers.drivers.loadBinderNodes(args)
     try:
@@ -109,6 +111,9 @@ def add_service(
             query = _read_byte_array(reader)
             response_data = _read_byte_array(reader)
             addBonjourService(query, response_data)
+            local_response.append_int32(0)
+        elif code == TRANSACTION_p2p_find:
+            p2p_find(_read_string16(reader))
             local_response.append_int32(0)
         elif code == TRANSACTION_addGroup:
             status, persistent = reader.read_int32()
