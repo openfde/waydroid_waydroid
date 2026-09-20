@@ -193,6 +193,9 @@ class P2pController:
     def p2p_remove_client(self, raw_args):
         self._run_p2p_expect_ok('p2p_remove_client', *raw_args.split())
 
+    def p2p_find(self, raw_args):
+        self._run_p2p_expect_ok('p2p_find', *raw_args.split())
+
     def cleanup(self):
         self.interface = None
 
@@ -288,6 +291,9 @@ def start(args):
     def p2p_remove_client(raw_args):
         initData['controller'].p2p_remove_client(raw_args)
 
+    def p2p_find(raw_args):
+        initData['controller'].p2p_find(raw_args)
+
     def service_thread():
         global initData
         while not initData['stopping']:
@@ -325,6 +331,7 @@ def start(args):
                 p2p_presence_req,
                 p2p_ext_listen,
                 p2p_remove_client,
+                p2p_find,
             )
 
     initData['stopping'] = False

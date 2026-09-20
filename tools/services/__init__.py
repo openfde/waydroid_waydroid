@@ -7,3 +7,4 @@ from tools.services.net_manager import start, stop
 from tools.services.task_manager import start, stop
 from tools.services.light_manager import start, stop
 from tools.services.bluetooth_manager import start, stop
+from tools.services.p2p_manager import start, stop
