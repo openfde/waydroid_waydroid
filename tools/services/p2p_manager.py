@@ -17,6 +17,22 @@ initData = {
 
 
 class P2pController:
+    P2P_GLOBAL_CONFIG_VARS = {
+        'device_name', 'device_type', 'config_methods', 'uuid', 'serial_number',
+        'manufacturer', 'model_name', 'model_number', 'os_version',
+        'p2p_listen_reg_class', 'p2p_listen_channel',
+        'p2p_oper_reg_class', 'p2p_oper_channel', 'p2p_go_intent',
+        'p2p_ssid_postfix', 'persistent_reconnect', 'p2p_intra_bss',
+        'p2p_group_idle', 'p2p_passphrase_len', 'p2p_search_delay',
+    }
+
+    P2P_SET_ALIASES = {
+        'ssid_postfix': 'p2p_ssid_postfix',
+        'listen_channel': 'p2p_listen_channel',
+        'listen_reg_class': 'p2p_listen_reg_class',
+        'go_intent': 'p2p_go_intent',
+    }
+
     def __init__(self):
         self.interface = None
 
@@ -183,7 +199,15 @@ class P2pController:
         return output or ""
 
     def p2p_set(self, raw_args):
-        self._run_p2p_expect_ok('p2p_set', *raw_args.split())
+        args = raw_args.split() if raw_args else []
+        if not args:
+            logging.error("p2p_set called without arguments")
+            return
+        args[0] = self.P2P_SET_ALIASES.get(args[0], args[0])
+        if args[0] in self.P2P_GLOBAL_CONFIG_VARS:
+            self._run_p2p_expect_ok('set', *args)
+        else:
+            self._run_p2p_expect_ok('p2p_set', *args)
 
     def p2p_flush(self):
         self._run_p2p_expect_ok('p2p_flush')
