@@ -3,6 +3,7 @@
 
 import binascii
 import logging
+import re
 import subprocess
 import threading
 
@@ -23,6 +24,8 @@ class P2pController:
         command = ['wpa_cli']
         if self.interface:
             command.extend(['-i', self.interface])
+        if any(arg.startswith('-') for arg in args):
+            command.append('--')
         command.extend(args)
         try:
             result = subprocess.run(command, capture_output=True, text=True, timeout=10, check=False)
@@ -55,7 +58,11 @@ class P2pController:
 
         for line in output.splitlines():
             candidate = line.strip()
-            if candidate and candidate not in ('Selected interface', 'Available interfaces:'):
+            match = re.search(r"'([^']+)'", candidate)
+            if match:
+                self.interface = match.group(1)
+                break
+            if candidate and not candidate.startswith(('Selected interface', 'Available interfaces')):
                 self.interface = candidate
                 break
 
