@@ -38,6 +38,8 @@ TRANSACTION_p2p_unauthorize = 28
 TRANSACTION_p2p_presence_req = 29
 TRANSACTION_p2p_ext_listen = 30
 TRANSACTION_p2p_remove_client = 31
+TRANSACTION_registerCallback = 32
+TRANSACTION_unregisterCallback = 33
 
 
 def _read_byte_array(reader):
@@ -94,6 +96,8 @@ def add_service(
     p2p_ext_listen,
     p2p_remove_client,
     p2p_find,
+    registerCallback,
+    unregisterCallback,
 ):
     helpers.drivers.loadBinderNodes(args)
     try:
@@ -208,6 +212,16 @@ def add_service(
         elif code == TRANSACTION_p2p_remove_client:
             p2p_remove_client(_read_string16(reader))
             local_response.append_int32(0)
+        elif code == TRANSACTION_registerCallback:
+            callback = reader.read_object()
+            ret = registerCallback(callback)
+            local_response.append_int32(0)
+            local_response.append_bool(ret)
+        elif code == TRANSACTION_unregisterCallback:
+            callback = reader.read_object()
+            ret = unregisterCallback(callback)
+            local_response.append_int32(0)
+            local_response.append_bool(ret)
         else:
             logging.error("{} unknown code: {}".format(INTERFACE, code))
             local_response.append_int32(0)

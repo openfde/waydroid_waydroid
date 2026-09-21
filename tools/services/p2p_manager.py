@@ -7,13 +7,38 @@ import re
 import subprocess
 import threading
 
-from tools.interfaces import IP2p
+from tools.interfaces import IP2p, p2p_callback
+from tools.services.p2p_monitor import P2pEventMonitor
 
 
 initData = {
     'controller': None,
+    'monitor': None,
     'stopping': False
 }
+
+callbackData = {
+    'INTERFACE': p2p_callback.INTERFACE,
+    'lock': threading.Lock(),
+    'registeredCallbacks': [],
+    'deathNotifications': {}
+}
+
+
+def dispatch_event(method_name, *args):
+    """Invoke one ISupplicantP2pIfaceCallback method on every registered callback."""
+    with callbackData['lock']:
+        callbacks = list(callbackData['registeredCallbacks'])
+    for callback in callbacks:
+        try:
+            if callback.is_dead():
+                logging.warning("P2P callback is dead, skipping %s", method_name)
+                continue
+            proxy = p2p_callback.ISupplicantP2pIfaceCallback(callback)
+            getattr(proxy, method_name)(*args)
+        except Exception as e:
+            logging.error("Failed to dispatch %s to P2P callback %s: %s",
+                          method_name, callback, e)
 
 
 class P2pController:
@@ -325,6 +350,46 @@ def start(args):
     def p2p_find(raw_args):
         initData['controller'].p2p_find(raw_args)
 
+    def removeCallback(callback, reason="unknown"):
+        global callbackData
+        with callbackData['lock']:
+            ret = False
+            if callback in callbackData['registeredCallbacks']:
+                callbackData['registeredCallbacks'].remove(callback)
+                logging.info("P2P callback removed (%s). Remaining: %d",
+                             reason, len(callbackData['registeredCallbacks']))
+                ret = True
+
+            if callback in callbackData['deathNotifications']:
+                deathNotificationId = callbackData['deathNotifications'].pop(callback)
+                try:
+                    callback.remove_handler(deathNotificationId)
+                except Exception as e:
+                    logging.error("Failed to remove death notification: %s", e)
+            return ret
+
+    def registerCallback(callback):
+        logging.info("P2P registerCallback: %s", callback)
+
+        def deathHandler():
+            removeCallback(callback, "clientDied")
+
+        global callbackData
+        if callback:
+            with callbackData['lock']:
+                callbackData['registeredCallbacks'].append(callback)
+                try:
+                    deathNotificationId = callback.add_death_handler(deathHandler)
+                    callbackData['deathNotifications'][callback] = deathNotificationId
+                except Exception as e:
+                    logging.error("Failed to set up death notification: %s", e)
+                return True
+        logging.warning("P2P registerCallback called with no callback object")
+        return False
+
+    def unregisterCallback(callback):
+        return removeCallback(callback, "clientUnregistered") if callback else False
+
     def service_thread():
         global initData
         while not initData['stopping']:
@@ -363,9 +428,13 @@ def start(args):
                 p2p_ext_listen,
                 p2p_remove_client,
                 p2p_find,
+                registerCallback,
+                unregisterCallback,
             )
 
     initData['stopping'] = False
+    initData['monitor'] = P2pEventMonitor(dispatch_event)
+    initData['monitor'].start()
     args.p2pManager = threading.Thread(target=service_thread)
     args.p2pManager.start()
 
@@ -373,6 +442,12 @@ def start(args):
 def stop(args):
     global initData
     initData['stopping'] = True
+    if initData['monitor']:
+        initData['monitor'].stop()
+        initData['monitor'] = None
+    with callbackData['lock']:
+        callbackData['registeredCallbacks'].clear()
+        callbackData['deathNotifications'].clear()
     if initData['controller']:
         initData['controller'].cleanup()
         initData['controller'] = None
