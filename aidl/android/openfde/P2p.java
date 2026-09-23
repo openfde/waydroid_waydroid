@@ -842,7 +842,7 @@ public class P2p {
             return null;
         }
         try {
-            return service.get_device_address();
+            return service.p2p_get_device_address();
         } catch (RemoteException e) {
             Log.e(TAG, e.getLocalizedMessage(), e);
         }
