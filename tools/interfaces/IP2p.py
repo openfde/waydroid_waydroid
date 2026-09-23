@@ -40,6 +40,7 @@ TRANSACTION_p2p_ext_listen = 30
 TRANSACTION_p2p_remove_client = 31
 TRANSACTION_registerCallback = 32
 TRANSACTION_unregisterCallback = 33
+TRANSACTION_p2p_get_device_address = 34
 
 
 def _read_byte_array(reader):
@@ -98,6 +99,7 @@ def add_service(
     p2p_find,
     registerCallback,
     unregisterCallback,
+    p2p_get_device_address,
 ):
     helpers.drivers.loadBinderNodes(args)
     try:
@@ -222,6 +224,10 @@ def add_service(
             ret = unregisterCallback(callback)
             local_response.append_int32(0)
             local_response.append_bool(ret)
+        elif code == TRANSACTION_p2p_get_device_address:
+            ret = p2p_get_device_address()
+            local_response.append_int32(0)
+            local_response.append_string16(ret if ret else "")
         else:
             logging.error("{} unknown code: {}".format(INTERFACE, code))
             local_response.append_int32(0)
