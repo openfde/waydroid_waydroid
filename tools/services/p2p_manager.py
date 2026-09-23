@@ -5,6 +5,7 @@ import binascii
 import json
 import logging
 import re
+import shlex
 import subprocess
 import threading
 
@@ -112,6 +113,13 @@ class P2pController:
 
     def __init__(self):
         self.interface = None
+        self.active_connection_name = None
+        self.active_peer = None
+        self.active_group_ifname = None
+        self.active_is_go = False
+        self.active_ssid = ""
+        self.active_bssid = ""
+        self.active_client_list = ""
 
     def _run_wpa_cli(self, *args):
         command = ['wpa_cli']
@@ -140,6 +148,156 @@ class P2pController:
         if stderr:
             logging.debug("wpa_cli stderr: %s", stderr)
         return stdout
+
+    def _run_wpa_cli_for_interface(self, interface, *args):
+        command = ['wpa_cli', '-i', interface]
+        if any(arg.startswith('-') for arg in args):
+            command.append('--')
+        command.extend(args)
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=10, check=False)
+        except FileNotFoundError:
+            logging.error("wpa_cli not found")
+            return None
+        except subprocess.TimeoutExpired:
+            logging.error("wpa_cli command timed out: %s", " ".join(command))
+            return None
+
+        stdout = result.stdout.strip()
+        stderr = result.stderr.strip()
+        if result.returncode != 0:
+            logging.error("wpa_cli failed (%s): %s", " ".join(command), stderr or result.returncode)
+            return None
+        return stdout
+
+    def _run_nmcli(self, *args, timeout=30):
+        command = ['nmcli']
+        command.extend(args)
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
+        except FileNotFoundError:
+            logging.error("nmcli not found")
+            return None
+        except subprocess.TimeoutExpired:
+            logging.error("nmcli command timed out: %s", " ".join(command))
+            return None
+
+        stdout = result.stdout.strip()
+        stderr = result.stderr.strip()
+        if result.returncode != 0:
+            logging.error("nmcli failed (%s): %s", " ".join(command), stderr or result.returncode)
+            return None
+        if stderr:
+            logging.debug("nmcli stderr: %s", stderr)
+        return stdout
+
+    def _parse_peer_mac(self, raw_args):
+        for token in shlex.split(raw_args or ""):
+            if re.fullmatch(r'[0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5}', token):
+                return token.lower()
+        return None
+
+    def _p2p_peer_exists(self, peer):
+        output = self.p2p_peer(peer)
+        return bool(output and output != 'FAIL')
+
+    def _nm_connection_name(self, peer):
+        return "openfde-p2p-" + peer.replace(':', '')
+
+    def _nm_connection_exists(self, name):
+        return self._run_nmcli('connection', 'show', name) is not None
+
+    def _nm_ensure_p2p_connection(self, name, peer):
+        if self._nm_connection_exists(name):
+            output = self._run_nmcli(
+                'connection', 'modify', name,
+                'wifi-p2p.peer', peer,
+                'connection.permissions', 'user',
+                'ipv4.method', 'auto')
+            return output is not None
+        output = self._run_nmcli(
+            'connection', 'add',
+            'type', 'wifi-p2p',
+            'wifi-p2p.peer', peer,
+            'con-name', name,
+            'connection.permissions', 'user',
+            'ipv4.method', 'auto')
+        return output is not None
+
+    def _nm_active_p2p_connections(self):
+        output = self._run_nmcli('-t', '-f', 'NAME,TYPE,DEVICE', 'connection', 'show', '--active')
+        if not output:
+            return []
+        active = []
+        for line in output.splitlines():
+            fields = line.rsplit(':', 2)
+            if len(fields) < 3:
+                continue
+            name, conn_type, device = fields[0], fields[1], fields[2]
+            if conn_type == 'wifi-p2p':
+                active.append((name, device))
+        return active
+
+    def _refresh_active_p2p_connection(self, preferred_name=None, peer=None):
+        active = self._nm_active_p2p_connections()
+        selected = None
+        for name, device in active:
+            if preferred_name is None or name == preferred_name:
+                selected = (name, device)
+                break
+        if selected is None and active:
+            selected = active[0]
+        if selected is None:
+            return False
+
+        self.active_connection_name, self.active_group_ifname = selected
+        if peer:
+            self.active_peer = peer
+        self._refresh_group_status()
+        return True
+
+    def _refresh_group_status(self):
+        if not self.active_group_ifname:
+            return
+        status = self._run_wpa_cli_for_interface(self.active_group_ifname, 'status')
+        if not status:
+            return
+        for line in status.splitlines():
+            key, sep, value = line.partition('=')
+            if not sep:
+                continue
+            if key == 'mode':
+                self.active_is_go = value == 'P2P GO'
+            elif key == 'ssid':
+                self.active_ssid = value
+            elif key == 'bssid':
+                self.active_bssid = value
+
+    def _clear_active_group(self):
+        self.active_connection_name = None
+        self.active_peer = None
+        self.active_group_ifname = None
+        self.active_is_go = False
+        self.active_ssid = ""
+        self.active_bssid = ""
+        self.active_client_list = ""
+
+    def _emit_nm_connection_success(self):
+        dispatch_event('onGoNegotiationCompleted', int(p2p_callback.P2pStatusCode.SUCCESS))
+        if self.active_group_ifname:
+            dispatch_event(
+                'onGroupStartedWithParams',
+                self.active_group_ifname,
+                self.active_is_go,
+                self.active_ssid.encode('utf-8') if self.active_ssid else None,
+                0,
+                None,
+                "",
+                self.active_peer,
+                True)
+
+    def _emit_nm_connection_failure(self):
+        dispatch_event('onGoNegotiationCompleted', int(p2p_callback.P2pStatusCode.UNKNOWN_ERROR))
 
     def _ensure_interface(self):
         if self.interface:
@@ -196,16 +354,15 @@ class P2pController:
         return output
 
     def addGroup(self, persistent, persistentNetworkId):
-        command = ['p2p_group_add']
-        if persistent:
-            if persistentNetworkId >= 0:
-                command.append(f'persistent={persistentNetworkId}')
-            else:
-                command.append('persistent')
-        self._run_p2p_expect_ok(*command)
+        logging.info("Ignoring p2p_group_add request; NetworkManager creates P2P group on connection up")
 
     def cancelConnect(self):
-        self._run_p2p_expect_ok('p2p_cancel')
+        if self.active_connection_name:
+            self._run_nmcli('connection', 'down', self.active_connection_name)
+            dispatch_event('onGroupRemoved', self.active_group_ifname or "", self.active_is_go)
+            self._clear_active_group()
+        else:
+            self._run_p2p_expect_ok('p2p_cancel')
 
     def p2p_stop_find(self):
         self._run_p2p_expect_ok('p2p_stop_find')
@@ -217,14 +374,42 @@ class P2pController:
         self._run_p2p_expect_ok('p2p_asp_provision_resp', *raw_args.split())
 
     def p2p_connect(self, raw_args):
-        self._run_p2p_expect_ok('p2p_connect', *raw_args.split())
+        peer = self._parse_peer_mac(raw_args)
+        if not peer:
+            logging.error("p2p_connect missing peer mac: %s", raw_args)
+            self._emit_nm_connection_failure()
+            return
+        if not self._p2p_peer_exists(peer):
+            logging.error("P2P peer not found before NetworkManager connect: %s", peer)
+            self._emit_nm_connection_failure()
+            return
+
+        connection_name = self._nm_connection_name(peer)
+        if not self._nm_ensure_p2p_connection(connection_name, peer):
+            self._emit_nm_connection_failure()
+            return
+        output = self._run_nmcli('connection', 'up', connection_name, timeout=60)
+        if output is None:
+            self._emit_nm_connection_failure()
+            return
+        self.active_connection_name = connection_name
+        self.active_peer = peer
+        self._refresh_active_p2p_connection(connection_name, peer)
+        self._emit_nm_connection_success()
 
     def p2p_listen(self, raw_args):
         args = raw_args.split() if raw_args else []
         self._run_p2p_expect_ok('p2p_listen', *args)
 
     def p2p_group_remove(self, ifname):
-        self._run_p2p_expect_ok('p2p_group_remove', ifname)
+        self._refresh_active_p2p_connection(self.active_connection_name, self.active_peer)
+        connection_name = self.active_connection_name
+        if connection_name and (not ifname or self.active_group_ifname == ifname):
+            self._run_nmcli('connection', 'down', connection_name)
+            dispatch_event('onGroupRemoved', self.active_group_ifname or ifname or "", self.active_is_go)
+            self._clear_active_group()
+        else:
+            logging.warning("No active NetworkManager P2P group to remove: %s", ifname)
 
     def p2p_group_member(self, ifname):
         self._run_p2p_expect_ok('p2p_group_member', ifname)
@@ -283,36 +468,46 @@ class P2pController:
         self._run_p2p_expect_ok('set_network', str(network_id), field, value or "")
 
     def getNetworkBssid(self):
-        return self._get_network_field('bssid')
+        self._refresh_group_status()
+        return self.active_bssid or self._get_network_field('bssid')
 
     def getNetworkClientList(self):
-        return self._get_network_field('p2p_client_list')
+        return self.active_client_list or self._get_network_field('p2p_client_list')
 
     def getNetworkId(self):
         return self._get_current_network_id()
 
     def getNetworkInterfaceName(self):
-        return self.interface or self._ensure_interface() or ""
+        if not self.active_group_ifname:
+            self._refresh_active_p2p_connection(self.active_connection_name, self.active_peer)
+        return self.active_group_ifname or self.interface or self._ensure_interface() or ""
 
     def getNetworkSsid(self):
-        return self._get_network_field('ssid').strip('"')
+        self._refresh_group_status()
+        return self.active_ssid or self._get_network_field('ssid').strip('"')
 
     def getNetworkType(self):
         # 1 matches the P2P iface type used by the Android supplicant API.
         return 1
 
     def isNetworkCurrent(self):
-        return self._get_current_network_id() >= 0
+        return self._refresh_active_p2p_connection(self.active_connection_name, self.active_peer)
 
     def isNetworkGroupOwner(self):
+        self._refresh_group_status()
+        if self.active_group_ifname:
+            return self.active_is_go
         mode = self._get_network_field('mode')
         return mode == '3'
 
     def isNetworkPersistent(self):
+        if self.active_connection_name and self._nm_connection_exists(self.active_connection_name):
+            return True
         disabled = self._get_network_field('disabled')
         return disabled == '2'
 
     def setNetworkClientList(self, clients):
+        self.active_client_list = clients or ""
         self._set_network_field('p2p_client_list', clients)
 
     def p2p_serv_disc_req(self, raw_args):
