@@ -184,7 +184,7 @@ class P2pController:
         output = self._run_p2p_command('p2p_get_passphrase')
         return output or ""
 
-    def get_device_address(self):
+    def p2p_get_device_address(self):
         output = self._run_p2p_command('status')
         if not output:
             return ""
@@ -402,7 +402,7 @@ def start(args):
         return removeCallback(callback, "clientUnregistered") if callback else False
 
     def p2p_get_device_address():
-        return initData['controller'].get_device_address()
+        return initData['controller'].p2p_get_device_address()
 
     def service_thread():
         global initData

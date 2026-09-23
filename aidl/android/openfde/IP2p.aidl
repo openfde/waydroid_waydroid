@@ -49,5 +49,5 @@ interface IP2p {
 
     boolean registerCallback(in IP2pCallback callback);
     boolean unregisterCallback(in IP2pCallback callback);
-    String get_device_address();
+    String p2p_get_device_address();
 }
