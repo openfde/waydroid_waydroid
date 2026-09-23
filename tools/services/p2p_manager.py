@@ -179,6 +179,7 @@ class P2pController:
     def _run_nmcli(self, *args, timeout=30):
         command = ['nmcli']
         command.extend(args)
+        logging.info("Running nmcli command: %s", " ".join(command))
         try:
             result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
         except FileNotFoundError:
@@ -193,26 +194,33 @@ class P2pController:
         if result.returncode != 0:
             logging.error("nmcli failed (%s): %s", " ".join(command), stderr or result.returncode)
             return None
+        logging.info("nmcli succeeded (%s): %s", " ".join(command), stdout)
         if stderr:
             logging.debug("nmcli stderr: %s", stderr)
         return stdout
 
     def _parse_peer_mac(self, raw_args):
+        logging.warning("Parsing P2P connect args for peer MAC: %s", raw_args)
         for token in shlex.split(raw_args or ""):
             if re.fullmatch(r'[0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5}', token):
-                return token.lower()
+                peer = token.lower()
+                logging.warning("Parsed P2P peer MAC: %s", peer)
+                return peer
+        logging.error("No P2P peer MAC found in args: %s", raw_args)
         return None
 
     def _p2p_peer_exists(self, peer):
         output = self.p2p_peer(peer)
+        logging.info("wpa_cli p2p_peer %s output: %s", peer, output)
         return bool(output and output != 'FAIL')
 
     def _nm_connection_name(self, peer):
-        return "openfde-p2p-" + peer.replace(':', '')
+        return "wifi-p2p"
 
     def _nm_saved_p2p_connections(self):
         output = self._run_nmcli('-t', '-f', 'NAME,TYPE', 'connection', 'show')
         if not output:
+            logging.info("No saved NetworkManager connections found while searching for wifi-p2p profiles")
             return []
         names = []
         for line in output.splitlines():
@@ -222,22 +230,27 @@ class P2pController:
             name, conn_type = fields
             if conn_type == 'wifi-p2p':
                 names.append(name)
+        logging.info("Saved NetworkManager wifi-p2p connections: %s", names)
         return names
 
     def _nm_connection_peer(self, name):
         output = self._run_nmcli('-g', 'wifi-p2p.peer', 'connection', 'show', name)
-        return output.strip().lower() if output else ""
+        peer = output.strip().lower() if output else ""
+        logging.info("NetworkManager connection %s has wifi-p2p.peer=%s", name, peer)
+        return peer
 
     def _nm_find_p2p_connection(self, peer):
         fallback = None
         for name in self._nm_saved_p2p_connections():
             configured_peer = self._nm_connection_peer(name)
             if configured_peer == peer:
+                logging.info("Selected exact NetworkManager P2P connection %s for peer %s", name, peer)
                 return name
             if fallback is None:
                 fallback = name
             if name == 'wifi-p2p':
                 fallback = name
+        logging.info("Selected fallback NetworkManager P2P connection %s for peer %s", fallback, peer)
         return fallback
 
     def _nm_connection_exists(self, name):
@@ -245,17 +258,33 @@ class P2pController:
 
     def _nm_ensure_p2p_connection(self, name, peer):
         if self._nm_connection_exists(name):
+            logging.warning("Updating existing NetworkManager P2P connection %s for peer %s", name, peer)
             output = self._run_nmcli(
                 'connection', 'modify', name,
                 'wifi-p2p.peer', peer,
                 'ipv4.method', 'auto')
+            logging.warning("NetworkManager P2P connection modify result for %s: %s", name, output)
             return output is not None
+        logging.warning("Creating NetworkManager P2P connection %s for peer %s", name, peer)
         output = self._run_nmcli(
             'connection', 'add',
             'type', 'wifi-p2p',
             'wifi-p2p.peer', peer,
             'con-name', name,
             'ipv4.method', 'auto')
+        logging.warning("NetworkManager P2P connection add result for %s: %s", name, output)
+        if output is not None:
+            return True
+
+        logging.warning("Retrying NetworkManager P2P connection creation after deleting stale profile %s", name)
+        self._run_nmcli('connection', 'delete', name)
+        output = self._run_nmcli(
+            'connection', 'add',
+            'type', 'wifi-p2p',
+            'wifi-p2p.peer', peer,
+            'con-name', name,
+            'ipv4.method', 'auto')
+        logging.info("NetworkManager P2P connection recreate result for %s: %s", name, output)
         return output is not None
 
     def _nm_active_p2p_connections(self):
@@ -408,26 +437,34 @@ class P2pController:
         self._run_p2p_expect_ok('p2p_asp_provision_resp', *raw_args.split())
 
     def p2p_connect(self, raw_args):
+        logging.warning("P2pController.p2p_connect called with raw_args=%s", raw_args)
         peer = self._parse_peer_mac(raw_args)
         if not peer:
-            logging.error("p2p_connect missing peer mac: %s", raw_args)
+            logging.error("p2p_connect requires explicit peer mac in args: %s", raw_args)
             self._emit_nm_connection_failure()
             return
         if not self._p2p_peer_exists(peer):
             logging.warning("P2P peer not confirmed by wpa_cli before NetworkManager connect: %s", peer)
 
         connection_name = self._nm_find_p2p_connection(peer) or self._nm_connection_name(peer)
+        logging.warning("Using NetworkManager P2P connection %s for peer %s", connection_name, peer)
         if not self._nm_ensure_p2p_connection(connection_name, peer):
+            logging.error("Failed to create/update NetworkManager P2P connection %s", connection_name)
             self._emit_nm_connection_failure()
             return
-        logging.info("Bringing up NetworkManager P2P connection %s for peer %s", connection_name, peer)
+        logging.warning("About to run NetworkManager P2P connection up: %s", connection_name)
         output = self._run_nmcli('connection', 'up', connection_name, timeout=60)
         if output is None:
+            logging.error("NetworkManager P2P connection up failed: %s", connection_name)
             self._emit_nm_connection_failure()
             return
+        logging.info("NetworkManager P2P connection up completed: %s output=%s", connection_name, output)
         self.active_connection_name = connection_name
         self.active_peer = peer
         self._refresh_active_p2p_connection(connection_name, peer)
+        logging.info("Active NetworkManager P2P state: connection=%s peer=%s ifname=%s is_go=%s ssid=%s bssid=%s",
+                     self.active_connection_name, self.active_peer, self.active_group_ifname,
+                     self.active_is_go, self.active_ssid, self.active_bssid)
         self._emit_nm_connection_success()
 
     def p2p_listen(self, raw_args):
