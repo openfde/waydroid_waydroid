@@ -31,8 +31,10 @@ import org.json.JSONObject;
 public class P2p {
     private static final String TAG = "fdep2p";
     public static final String SERVICE_NAME = "openfdep2p";
+    public static final String NETWORK_SERVICE_NAME = "openfdep2pnetwork";
 
     private static IP2p sService;
+    private static ISupplicantP2pNetwork sNetworkService;
     private static P2p sInstance;
     private final Context mContext;
     private EventListener eventListener;
@@ -185,6 +187,26 @@ public class P2p {
             return null;
         }
         return sService;
+    }
+
+    public static ISupplicantP2pNetwork getNetworkService() {
+        if (sNetworkService != null) {
+            return sNetworkService;
+        }
+        try {
+            Class<?> serviceManager = Class.forName("android.os.ServiceManager");
+            Method getServiceMethod = serviceManager.getDeclaredMethod("getService", String.class);
+            IBinder b = (IBinder) getServiceMethod.invoke(null, NETWORK_SERVICE_NAME);
+            if (b == null) {
+                Log.e(TAG, NETWORK_SERVICE_NAME + " null SAD!");
+                return null;
+            }
+            sNetworkService = ISupplicantP2pNetwork.Stub.asInterface(b);
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting P2P network service via reflection", e);
+            return null;
+        }
+        return sNetworkService;
     }
 
     public boolean addBonjourService(byte[] query, byte[] response) {
@@ -825,5 +847,136 @@ public class P2p {
             Log.e(TAG, e.getLocalizedMessage(), e);
         }
         return null;
+    }
+
+    public String getNetworkBssid() {
+        ISupplicantP2pNetwork service = getNetworkService();
+        if (service == null) {
+            return "";
+        }
+        try {
+            return service.getBssid();
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+        return "";
+    }
+
+    public String getNetworkClientList() {
+        ISupplicantP2pNetwork service = getNetworkService();
+        if (service == null) {
+            return "";
+        }
+        try {
+            return service.getClientList();
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+        return "";
+    }
+
+    public int getNetworkId() {
+        ISupplicantP2pNetwork service = getNetworkService();
+        if (service == null) {
+            return -1;
+        }
+        try {
+            return service.getId();
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+        return -1;
+    }
+
+    public String getNetworkInterfaceName() {
+        ISupplicantP2pNetwork service = getNetworkService();
+        if (service == null) {
+            return "";
+        }
+        try {
+            return service.getInterfaceName();
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+        return "";
+    }
+
+    public String getNetworkSsid() {
+        ISupplicantP2pNetwork service = getNetworkService();
+        if (service == null) {
+            return "";
+        }
+        try {
+            return service.getSsid();
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+        return "";
+    }
+
+    public int getNetworkType() {
+        ISupplicantP2pNetwork service = getNetworkService();
+        if (service == null) {
+            return 0;
+        }
+        try {
+            return service.getType();
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+        return 0;
+    }
+
+    public boolean isNetworkCurrent() {
+        ISupplicantP2pNetwork service = getNetworkService();
+        if (service == null) {
+            return false;
+        }
+        try {
+            return service.isCurrent();
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+        return false;
+    }
+
+    public boolean isNetworkGroupOwner() {
+        ISupplicantP2pNetwork service = getNetworkService();
+        if (service == null) {
+            return false;
+        }
+        try {
+            return service.isGroupOwner();
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+        return false;
+    }
+
+    public boolean isNetworkPersistent() {
+        ISupplicantP2pNetwork service = getNetworkService();
+        if (service == null) {
+            return false;
+        }
+        try {
+            return service.isPersistent();
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+        return false;
+    }
+
+    public boolean setNetworkClientList(String clients) {
+        ISupplicantP2pNetwork service = getNetworkService();
+        if (service == null) {
+            return false;
+        }
+        try {
+            service.setClientList(clients);
+            return true;
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+        return false;
     }
 }

@@ -8,14 +8,15 @@ import re
 import subprocess
 import threading
 
-from tools.interfaces import IP2p, p2p_callback
+from tools.interfaces import IP2p, ISupplicantP2pNetwork, p2p_callback
 from tools.services.p2p_monitor import P2pEventMonitor
 
 
 initData = {
     'controller': None,
     'monitor': None,
-    'stopping': False
+    'stopping': False,
+    'network_service_started': False,
 }
 
 callbackData = {
@@ -246,6 +247,74 @@ class P2pController:
         logging.error("p2p_device_address not found in wpa_cli status output")
         return ""
 
+    def _get_current_network_id(self):
+        output = self._run_p2p_command('list_networks')
+        if not output:
+            return -1
+        fallback = -1
+        for line in output.splitlines():
+            line = line.strip()
+            if not line or line.startswith('network id'):
+                continue
+            fields = line.split('\t')
+            try:
+                network_id = int(fields[0])
+            except (ValueError, IndexError):
+                continue
+            if fallback < 0:
+                fallback = network_id
+            flags = fields[3] if len(fields) > 3 else ''
+            if '[CURRENT]' in flags:
+                return network_id
+        return fallback
+
+    def _get_network_field(self, field):
+        network_id = self._get_current_network_id()
+        if network_id < 0:
+            return ""
+        output = self._run_p2p_command('get_network', str(network_id), field)
+        return output or ""
+
+    def _set_network_field(self, field, value):
+        network_id = self._get_current_network_id()
+        if network_id < 0:
+            logging.error("No P2P network available for set_network %s", field)
+            return
+        self._run_p2p_expect_ok('set_network', str(network_id), field, value or "")
+
+    def getNetworkBssid(self):
+        return self._get_network_field('bssid')
+
+    def getNetworkClientList(self):
+        return self._get_network_field('p2p_client_list')
+
+    def getNetworkId(self):
+        return self._get_current_network_id()
+
+    def getNetworkInterfaceName(self):
+        return self.interface or self._ensure_interface() or ""
+
+    def getNetworkSsid(self):
+        return self._get_network_field('ssid').strip('"')
+
+    def getNetworkType(self):
+        # 1 matches the P2P iface type used by the Android supplicant API.
+        return 1
+
+    def isNetworkCurrent(self):
+        return self._get_current_network_id() >= 0
+
+    def isNetworkGroupOwner(self):
+        mode = self._get_network_field('mode')
+        return mode == '3'
+
+    def isNetworkPersistent(self):
+        disabled = self._get_network_field('disabled')
+        return disabled == '2'
+
+    def setNetworkClientList(self, clients):
+        self._set_network_field('p2p_client_list', clients)
+
     def p2p_serv_disc_req(self, raw_args):
         output = self._run_p2p_command('p2p_serv_disc_req', *raw_args.split())
         return output or ""
@@ -455,6 +524,55 @@ def start(args):
     def p2p_get_device_address():
         return initData['controller'].p2p_get_device_address()
 
+    def getNetworkBssid():
+        return initData['controller'].getNetworkBssid()
+
+    def getNetworkClientList():
+        return initData['controller'].getNetworkClientList()
+
+    def getNetworkId():
+        return initData['controller'].getNetworkId()
+
+    def getNetworkInterfaceName():
+        return initData['controller'].getNetworkInterfaceName()
+
+    def getNetworkSsid():
+        return initData['controller'].getNetworkSsid()
+
+    def getNetworkType():
+        return initData['controller'].getNetworkType()
+
+    def isNetworkCurrent():
+        return initData['controller'].isNetworkCurrent()
+
+    def isNetworkGroupOwner():
+        return initData['controller'].isNetworkGroupOwner()
+
+    def isNetworkPersistent():
+        return initData['controller'].isNetworkPersistent()
+
+    def setNetworkClientList(clients):
+        initData['controller'].setNetworkClientList(clients)
+
+    def network_service_thread():
+        global initData
+        while not initData['stopping']:
+            if not initData['controller']:
+                initData['controller'] = P2pController()
+            ISupplicantP2pNetwork.add_service(
+                args,
+                getNetworkBssid,
+                getNetworkClientList,
+                getNetworkId,
+                getNetworkInterfaceName,
+                getNetworkSsid,
+                getNetworkType,
+                isNetworkCurrent,
+                isNetworkGroupOwner,
+                isNetworkPersistent,
+                setNetworkClientList,
+            )
+
     def service_thread():
         global initData
         while not initData['stopping']:
@@ -501,6 +619,10 @@ def start(args):
     initData['stopping'] = False
     initData['monitor'] = P2pEventMonitor(dispatch_event)
     initData['monitor'].start()
+    if not initData.get('network_service_started'):
+        initData['network_service_started'] = True
+        args.p2pNetworkManager = threading.Thread(target=network_service_thread)
+        args.p2pNetworkManager.start()
     args.p2pManager = threading.Thread(target=service_thread)
     args.p2pManager.start()
 
@@ -522,3 +644,8 @@ def stop(args):
             args.p2pLoop.quit()
     except AttributeError:
         logging.debug("p2p service is not even started")
+    try:
+        if args.p2pNetworkLoop:
+            args.p2pNetworkLoop.quit()
+    except AttributeError:
+        logging.debug("p2p network service is not even started")
