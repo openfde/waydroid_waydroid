@@ -47,7 +47,7 @@ interface IP2p {
     void p2p_ext_listen(in String args);
     void p2p_remove_client(in String args);
 
-    boolean registerCallback(in IP2pCallback callback);
-    boolean unregisterCallback(in IP2pCallback callback);
+    boolean registerCallback(in IBInder callback);
+    boolean unregisterCallback(in IBinder callback);
     String p2p_get_device_address();
 }
