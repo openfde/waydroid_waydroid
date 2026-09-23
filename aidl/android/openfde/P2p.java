@@ -26,7 +26,7 @@ import java.lang.reflect.Method;
 
 public class P2p {
     private static final String TAG = "fdep2p";
-    public static final String SERVICE_NAME = "android.openfde.IP2p";
+    public static final String SERVICE_NAME = "openfdep2p";
 
     private static IP2p sService;
     private static P2p sInstance;
