@@ -111,6 +111,12 @@ class P2pController:
         'go_intent': 'p2p_go_intent',
     }
 
+    NM_IGNORED_P2P_SET_VARS = {
+        'group_idle',
+        'random_mac',
+        'disallow_freq',
+    }
+
     def __init__(self):
         self.interface = None
         self.active_connection_name = None
@@ -204,6 +210,36 @@ class P2pController:
     def _nm_connection_name(self, peer):
         return "openfde-p2p-" + peer.replace(':', '')
 
+    def _nm_saved_p2p_connections(self):
+        output = self._run_nmcli('-t', '-f', 'NAME,TYPE', 'connection', 'show')
+        if not output:
+            return []
+        names = []
+        for line in output.splitlines():
+            fields = line.rsplit(':', 1)
+            if len(fields) != 2:
+                continue
+            name, conn_type = fields
+            if conn_type == 'wifi-p2p':
+                names.append(name)
+        return names
+
+    def _nm_connection_peer(self, name):
+        output = self._run_nmcli('-g', 'wifi-p2p.peer', 'connection', 'show', name)
+        return output.strip().lower() if output else ""
+
+    def _nm_find_p2p_connection(self, peer):
+        fallback = None
+        for name in self._nm_saved_p2p_connections():
+            configured_peer = self._nm_connection_peer(name)
+            if configured_peer == peer:
+                return name
+            if fallback is None:
+                fallback = name
+            if name == 'wifi-p2p':
+                fallback = name
+        return fallback
+
     def _nm_connection_exists(self, name):
         return self._run_nmcli('connection', 'show', name) is not None
 
@@ -212,7 +248,6 @@ class P2pController:
             output = self._run_nmcli(
                 'connection', 'modify', name,
                 'wifi-p2p.peer', peer,
-                'connection.permissions', 'user',
                 'ipv4.method', 'auto')
             return output is not None
         output = self._run_nmcli(
@@ -220,7 +255,6 @@ class P2pController:
             'type', 'wifi-p2p',
             'wifi-p2p.peer', peer,
             'con-name', name,
-            'connection.permissions', 'user',
             'ipv4.method', 'auto')
         return output is not None
 
@@ -380,14 +414,13 @@ class P2pController:
             self._emit_nm_connection_failure()
             return
         if not self._p2p_peer_exists(peer):
-            logging.error("P2P peer not found before NetworkManager connect: %s", peer)
-            self._emit_nm_connection_failure()
-            return
+            logging.warning("P2P peer not confirmed by wpa_cli before NetworkManager connect: %s", peer)
 
-        connection_name = self._nm_connection_name(peer)
+        connection_name = self._nm_find_p2p_connection(peer) or self._nm_connection_name(peer)
         if not self._nm_ensure_p2p_connection(connection_name, peer):
             self._emit_nm_connection_failure()
             return
+        logging.info("Bringing up NetworkManager P2P connection %s for peer %s", connection_name, peer)
         output = self._run_nmcli('connection', 'up', connection_name, timeout=60)
         if output is None:
             self._emit_nm_connection_failure()
@@ -553,6 +586,9 @@ class P2pController:
         args = raw_args.split() if raw_args else []
         if not args:
             logging.error("p2p_set called without arguments")
+            return
+        if args[0] in self.NM_IGNORED_P2P_SET_VARS:
+            logging.info("Ignoring unsupported p2p_set %s under NetworkManager control", " ".join(args))
             return
         args[0] = self.P2P_SET_ALIASES.get(args[0], args[0])
         if args[0] in self.P2P_GLOBAL_CONFIG_VARS:
