@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import binascii
+import json
 import logging
 import re
 import subprocess
@@ -25,8 +26,58 @@ callbackData = {
 }
 
 
+P2P_EVENT_CODES = {
+    'onDeviceFound': 1,
+    'onDeviceLost': 2,
+    'onFindStopped': 3,
+    'onGoNegotiationCompleted': 4,
+    'onGoNegotiationRequest': 5,
+    'onGroupFormationFailure': 6,
+    'onGroupFormationSuccess': 7,
+    'onGroupRemoved': 8,
+    'onGroupStarted': 9,
+    'onInvitationReceived': 10,
+    'onInvitationResult': 11,
+    'onProvisionDiscoveryCompleted': 12,
+    'onR2DeviceFound': 13,
+    'onServiceDiscoveryResponse': 14,
+    'onStaAuthorized': 15,
+    'onStaDeauthorized': 16,
+    'onGroupFrequencyChanged': 17,
+    'onDeviceFoundWithVendorElements': 18,
+    'onGroupStartedWithParams': 19,
+    'onPeerClientJoined': 20,
+    'onPeerClientDisconnected': 21,
+    'onProvisionDiscoveryCompletedEvent': 22,
+    'onDeviceFoundWithParams': 23,
+    'onGoNegotiationRequestWithParams': 24,
+    'onInvitationReceivedWithParams': 25,
+    'onUsdBasedServiceDiscoveryResult': 26,
+    'onUsdBasedServiceDiscoveryTerminated': 27,
+    'onUsdBasedServiceAdvertisementTerminated': 28,
+}
+
+
+def _event_value(value):
+    if value is None:
+        return ""
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return bytes(value).hex()
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
 def dispatch_event(method_name, *args):
-    """Invoke one ISupplicantP2pIfaceCallback method on every registered callback."""
+    """Send one string-only P2P event to every registered callback."""
+    event_code = P2P_EVENT_CODES.get(method_name)
+    if event_code is None:
+        logging.error("Unknown P2P callback event: %s", method_name)
+        return
+    data = json.dumps({
+        'event': method_name,
+        'args': [_event_value(arg) for arg in args],
+    })
     with callbackData['lock']:
         callbacks = list(callbackData['registeredCallbacks'])
     for callback in callbacks:
@@ -35,7 +86,7 @@ def dispatch_event(method_name, *args):
                 logging.warning("P2P callback is dead, skipping %s", method_name)
                 continue
             proxy = p2p_callback.ISupplicantP2pIfaceCallback(callback)
-            getattr(proxy, method_name)(*args)
+            proxy.onEvents(event_code, data)
         except Exception as e:
             logging.error("Failed to dispatch %s to P2P callback %s: %s",
                           method_name, callback, e)
