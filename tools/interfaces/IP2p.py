@@ -139,7 +139,12 @@ def add_service(
             p2p_asp_provision_resp(_read_string16(reader))
             local_response.append_int32(0)
         elif code == TRANSACTION_p2p_connect:
-            p2p_connect(_read_string16(reader))
+            connect_args = _read_string16(reader)
+            logging.warning("%s: p2p_connect request args=%s", SERVICE_NAME, connect_args)
+            try:
+                p2p_connect(connect_args)
+            except Exception as e:
+                logging.exception("%s: p2p_connect failed for args=%s: %s", SERVICE_NAME, connect_args, e)
             local_response.append_int32(0)
         elif code == TRANSACTION_p2p_listen:
             p2p_listen(_read_string16(reader))
