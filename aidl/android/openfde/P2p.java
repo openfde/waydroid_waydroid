@@ -811,7 +811,7 @@ public class P2p {
                     eventListener.onUsdBasedServiceAdvertisementTerminated(sessionId, reasonCode);
                 }
             };
-            return service.registerCallback(callback);
+            return service.registerCallback(callback.asBinder());
         } catch (RemoteException e) {
             Log.e(TAG, e.getLocalizedMessage(), e);
         }
@@ -825,7 +825,7 @@ public class P2p {
         }
         boolean ret = false;
         try {
-            ret = service.unregisterCallback(callback);
+            ret = service.unregisterCallback(callback.asBinder());
         } catch (RemoteException e) {
             Log.e(TAG, e.getLocalizedMessage(), e);
         }
