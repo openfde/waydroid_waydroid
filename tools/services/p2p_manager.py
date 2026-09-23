@@ -184,6 +184,17 @@ class P2pController:
         output = self._run_p2p_command('p2p_get_passphrase')
         return output or ""
 
+    def get_device_address(self):
+        output = self._run_p2p_command('status')
+        if not output:
+            return ""
+        for line in output.splitlines():
+            key, sep, value = line.partition('=')
+            if sep and key.strip() == 'p2p_device_address':
+                return value.strip()
+        logging.error("p2p_device_address not found in wpa_cli status output")
+        return ""
+
     def p2p_serv_disc_req(self, raw_args):
         output = self._run_p2p_command('p2p_serv_disc_req', *raw_args.split())
         return output or ""
@@ -390,6 +401,9 @@ def start(args):
     def unregisterCallback(callback):
         return removeCallback(callback, "clientUnregistered") if callback else False
 
+    def p2p_get_device_address():
+        return initData['controller'].get_device_address()
+
     def service_thread():
         global initData
         while not initData['stopping']:
@@ -430,6 +444,7 @@ def start(args):
                 p2p_find,
                 registerCallback,
                 unregisterCallback,
+                p2p_get_device_address,
             )
 
     initData['stopping'] = False
