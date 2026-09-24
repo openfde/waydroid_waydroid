@@ -485,7 +485,8 @@ class P2pController:
         self._run_p2p_expect_ok('p2p_group_member', ifname)
 
     def p2p_prov_disc(self, raw_args):
-        self._run_p2p_expect_ok('p2p_prov_disc', *raw_args.split())
+        logging.warning("P2pController.p2p_prov_disc called with raw_args=%s", raw_args)
+        self.p2p_connect(raw_args)
 
     def p2p_get_passphrase(self):
         output = self._run_p2p_command('p2p_get_passphrase')

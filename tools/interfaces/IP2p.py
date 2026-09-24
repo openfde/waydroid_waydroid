@@ -156,7 +156,9 @@ def add_service(
             p2p_group_member(_read_string16(reader))
             local_response.append_int32(0)
         elif code == TRANSACTION_p2p_prov_disc:
-            p2p_prov_disc(_read_string16(reader))
+            prov_disc_args = _read_string16(reader)
+            logging.warning("%s: p2p_prov_disc request args=%s", SERVICE_NAME, prov_disc_args)
+            p2p_prov_disc(prov_disc_args)
             local_response.append_int32(0)
         elif code == TRANSACTION_p2p_get_passphrase:
             ret = p2p_get_passphrase()
