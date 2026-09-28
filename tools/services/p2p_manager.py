@@ -131,6 +131,9 @@ class P2pController:
         self.recently_removed_at = 0.0
         self._connect_lock = threading.Lock()
         self._connect_in_progress = False
+        self._connect_cancel_event = None
+        self._pending_connection_name = None
+        self._connect_process = None
         self._sanitize_saved_p2p_connections()
 
     def _run_wpa_cli(self, *args):
@@ -204,6 +207,63 @@ class P2pController:
         if stderr:
             logging.debug("nmcli stderr: %s", stderr)
         return stdout
+
+    def _run_nmcli_connection_up(self, connection_name, cancel_event, timeout=60):
+        command = ['nmcli', 'connection', 'up', connection_name]
+        logging.warning("Starting cancellable nmcli command: %s", " ".join(command))
+        try:
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        except FileNotFoundError:
+            logging.error("nmcli not found")
+            return None
+
+        with self._connect_lock:
+            self._connect_process = process
+            if cancel_event.is_set():
+                logging.info("Connect cancelled as nmcli connection up process started; terminating pid=%s",
+                             process.pid)
+                process.terminate()
+
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            logging.error("nmcli connection up timed out; killing pid=%s", process.pid)
+            process.kill()
+            stdout, stderr = process.communicate()
+            return None
+        finally:
+            with self._connect_lock:
+                if self._connect_process is process:
+                    self._connect_process = None
+
+        stdout = stdout.strip()
+        stderr = stderr.strip()
+        if cancel_event.is_set():
+            logging.info("nmcli connection up process exited after cancellation: pid=%s rc=%s",
+                         process.pid, process.returncode)
+            return None
+        if process.returncode != 0:
+            logging.error("nmcli failed (%s): %s", " ".join(command), stderr or process.returncode)
+            return None
+        logging.info("nmcli succeeded (%s): %s", " ".join(command), stdout)
+        if stderr:
+            logging.debug("nmcli stderr: %s", stderr)
+        return stdout
+
+    def _terminate_connect_process(self, process):
+        if process is None or process.poll() is not None:
+            return
+        try:
+            logging.warning("Terminating nmcli connection up process pid=%s", process.pid)
+            process.terminate()
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                logging.warning("nmcli connection up ignored terminate; killing pid=%s", process.pid)
+                process.kill()
+                process.wait()
+        except ProcessLookupError:
+            logging.info("nmcli connection up process pid=%s already exited", process.pid)
 
     def _parse_peer_mac(self, raw_args):
         logging.warning("Parsing P2P connect args for peer MAC: %s", raw_args)
@@ -524,13 +584,35 @@ class P2pController:
         logging.info("Ignoring p2p_group_add request; NetworkManager creates P2P group on connection up")
 
     def cancelConnect(self):
-        if self.active_connection_name:
+        with self._connect_lock:
+            cancel_event = self._connect_cancel_event
+            if cancel_event:
+                cancel_event.set()
+            connect_process = self._connect_process
+            connection_name = self.active_connection_name or self._pending_connection_name
             group_ifname = self.active_group_ifname or ""
             is_go = self.active_is_go
-            self._teardown_active_group()
-            dispatch_event('onGroupRemoved', group_ifname, is_go)
+
+        self._terminate_connect_process(connect_process)
+
+        if not connection_name:
+            self._refresh_active_p2p_connection()
+            connection_name = self.active_connection_name
+            group_ifname = self.active_group_ifname or group_ifname
+            is_go = self.active_is_go
+
+        if connection_name:
+            logging.warning("Cancelling P2P connection through NetworkManager: %s", connection_name)
+            self._run_nmcli('connection', 'down', connection_name)
+            self._nm_delete_p2p_connection(connection_name)
         else:
-            self._run_p2p_expect_ok('p2p_cancel')
+            logging.warning("No active or pending NetworkManager P2P connection to cancel")
+
+        self.recently_removed_ifname = group_ifname or None
+        self.recently_removed_at = time.time()
+        self._clear_active_group()
+        if group_ifname:
+            dispatch_event('onGroupRemoved', group_ifname, is_go)
 
     def p2p_stop_find(self):
         self._run_p2p_expect_ok('p2p_stop_find')
@@ -548,10 +630,14 @@ class P2pController:
                 logging.warning("Ignoring P2P connect request while another connection attempt is in progress")
                 return
             self._connect_in_progress = True
+            cancel_event = threading.Event()
+            self._connect_cancel_event = cancel_event
+            self._pending_connection_name = self._nm_connection_name(
+                self._parse_peer_mac(raw_args) or "")
 
         worker = threading.Thread(
             target=self._p2p_connect_worker,
-            args=(raw_args,),
+            args=(raw_args, cancel_event),
             name="waydroid-p2p-connect",
             daemon=True)
         try:
@@ -559,38 +645,64 @@ class P2pController:
         except Exception:
             with self._connect_lock:
                 self._connect_in_progress = False
+                self._connect_cancel_event = None
+                self._pending_connection_name = None
             logging.exception("Failed to start asynchronous P2P connect worker")
             self._emit_nm_connection_failure()
 
-    def _p2p_connect_worker(self, raw_args):
+    def _p2p_connect_worker(self, raw_args, cancel_event):
         logging.warning("P2P connect worker started with raw_args=%s", raw_args)
         try:
-            self._p2p_connect_sync(raw_args)
+            self._p2p_connect_sync(raw_args, cancel_event)
         except Exception:
             logging.exception("Unhandled error in asynchronous P2P connect worker")
-            self._emit_nm_connection_failure()
+            if not cancel_event.is_set():
+                self._emit_nm_connection_failure()
         finally:
             with self._connect_lock:
-                self._connect_in_progress = False
+                if self._connect_cancel_event is cancel_event:
+                    self._connect_in_progress = False
+                    self._connect_cancel_event = None
+                    self._pending_connection_name = None
             logging.info("P2P connect worker finished")
 
-    def _p2p_connect_sync(self, raw_args):
+    def _p2p_connect_sync(self, raw_args, cancel_event):
         peer = self._parse_peer_mac(raw_args)
         if not peer:
             logging.error("p2p_connect requires explicit peer mac in args: %s", raw_args)
-            self._emit_nm_connection_failure()
+            if not cancel_event.is_set():
+                self._emit_nm_connection_failure()
             return
         if not self._p2p_peer_exists(peer):
             logging.warning("P2P peer not confirmed by wpa_cli before NetworkManager connect: %s", peer)
 
         connection_name = self._nm_find_p2p_connection(peer) or self._nm_connection_name(peer)
+        with self._connect_lock:
+            if self._connect_cancel_event is cancel_event:
+                self._pending_connection_name = connection_name
         logging.warning("Using NetworkManager P2P connection %s for peer %s", connection_name, peer)
+        if cancel_event.is_set():
+            self._run_nmcli('connection', 'down', connection_name)
+            self._nm_delete_p2p_connection(connection_name)
+            logging.info("P2P connection attempt cancelled before profile preparation")
+            return
         if not self._nm_ensure_p2p_connection(connection_name, peer):
             logging.error("Failed to create/update NetworkManager P2P connection %s", connection_name)
-            self._emit_nm_connection_failure()
+            if not cancel_event.is_set():
+                self._emit_nm_connection_failure()
+            return
+        if cancel_event.is_set():
+            self._run_nmcli('connection', 'down', connection_name)
+            self._nm_delete_p2p_connection(connection_name)
+            logging.info("P2P connection attempt cancelled before connection up")
             return
         logging.warning("About to run NetworkManager P2P connection up: %s", connection_name)
-        output = self._run_nmcli('connection', 'up', connection_name, timeout=60)
+        output = self._run_nmcli_connection_up(connection_name, cancel_event, timeout=60)
+        if cancel_event.is_set():
+            self._run_nmcli('connection', 'down', connection_name)
+            self._nm_delete_p2p_connection(connection_name)
+            logging.info("P2P connection attempt cancelled while connection up was running")
+            return
         if output is None:
             logging.error("NetworkManager P2P connection up failed: %s", connection_name)
             self._emit_nm_connection_failure()
