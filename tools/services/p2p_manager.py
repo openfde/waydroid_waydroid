@@ -129,6 +129,8 @@ class P2pController:
         self.active_client_list = ""
         self.recently_removed_ifname = None
         self.recently_removed_at = 0.0
+        self._connect_lock = threading.Lock()
+        self._connect_in_progress = False
         self._sanitize_saved_p2p_connections()
 
     def _run_wpa_cli(self, *args):
@@ -540,7 +542,39 @@ class P2pController:
         self._run_p2p_expect_ok('p2p_asp_provision_resp', *raw_args.split())
 
     def p2p_connect(self, raw_args):
-        logging.warning("P2pController.p2p_connect called with raw_args=%s", raw_args)
+        logging.warning("P2pController.p2p_connect received request; scheduling asynchronously: %s", raw_args)
+        with self._connect_lock:
+            if self._connect_in_progress:
+                logging.warning("Ignoring P2P connect request while another connection attempt is in progress")
+                return
+            self._connect_in_progress = True
+
+        worker = threading.Thread(
+            target=self._p2p_connect_worker,
+            args=(raw_args,),
+            name="waydroid-p2p-connect",
+            daemon=True)
+        try:
+            worker.start()
+        except Exception:
+            with self._connect_lock:
+                self._connect_in_progress = False
+            logging.exception("Failed to start asynchronous P2P connect worker")
+            self._emit_nm_connection_failure()
+
+    def _p2p_connect_worker(self, raw_args):
+        logging.warning("P2P connect worker started with raw_args=%s", raw_args)
+        try:
+            self._p2p_connect_sync(raw_args)
+        except Exception:
+            logging.exception("Unhandled error in asynchronous P2P connect worker")
+            self._emit_nm_connection_failure()
+        finally:
+            with self._connect_lock:
+                self._connect_in_progress = False
+            logging.info("P2P connect worker finished")
+
+    def _p2p_connect_sync(self, raw_args):
         peer = self._parse_peer_mac(raw_args)
         if not peer:
             logging.error("p2p_connect requires explicit peer mac in args: %s", raw_args)
@@ -589,8 +623,7 @@ class P2pController:
         self._run_p2p_expect_ok('p2p_group_member', ifname)
 
     def p2p_prov_disc(self, raw_args):
-        logging.warning("P2pController.p2p_prov_disc called with raw_args=%s", raw_args)
-        # self.p2p_connect(raw_args)
+        self.p2p_connect(raw_args)
 
     def p2p_get_passphrase(self):
         output = self._run_p2p_command('p2p_get_passphrase')
@@ -993,10 +1026,10 @@ def start(args):
             )
 
     def monitor_dispatch(method_name, *args):
-        if method_name == 'onGroupRemoved':
-            controller = initData['controller']
-            if controller and controller.handle_group_removed_event(args[0] if args else ""):
-                return
+        #if method_name == 'onGroupRemoved':
+            #controller = initData['controller']
+            #if controller and controller.handle_group_removed_event(args[0] if args else ""):
+                #return
         dispatch_event(method_name, *args)
 
     initData['stopping'] = False
