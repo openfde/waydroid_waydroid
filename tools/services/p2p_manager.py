@@ -590,7 +590,7 @@ class P2pController:
 
     def p2p_prov_disc(self, raw_args):
         logging.warning("P2pController.p2p_prov_disc called with raw_args=%s", raw_args)
-        self.p2p_connect(raw_args)
+        # self.p2p_connect(raw_args)
 
     def p2p_get_passphrase(self):
         output = self._run_p2p_command('p2p_get_passphrase')
