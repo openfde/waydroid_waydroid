@@ -63,6 +63,7 @@ def add_service(
             local_response.append_int32(int(getId()))
         elif code == TRANSACTION_getInterfaceName:
             ret = getInterfaceName()
+            logging.warning("%s: getInterfaceName returning %s", SERVICE_NAME, ret)
             local_response.append_int32(0)
             local_response.append_string16(ret if ret else "")
         elif code == TRANSACTION_getSsid:
