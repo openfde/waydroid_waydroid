@@ -110,6 +110,8 @@ def _find_ctrl_path():
         if not path.is_dir():
             continue
         for entry in sorted(path.iterdir()):
+            if entry.name.startswith('p2p'):
+                continue
             if entry.is_socket() or entry.is_file():
                 return str(entry)
     return None
