@@ -301,6 +301,41 @@ class P2pController:
                 active.append((name, device))
         return active
 
+    def _resolve_p2p_group_interface(self, device):
+        if not device:
+            return ""
+        if device.startswith('p2p-') and not device.startswith('p2p-dev-'):
+            return device
+
+        nm_output = self._run_nmcli()
+        if nm_output:
+            in_device_section = False
+            for line in nm_output.splitlines():
+                stripped = line.strip()
+                if stripped.startswith(device + ':'):
+                    in_device_section = True
+                    continue
+                if in_device_section and stripped and not line.startswith((' ', '\t')):
+                    in_device_section = False
+                if not in_device_section:
+                    continue
+                match = re.search(r'\b(p2p-[A-Za-z0-9_.-]+-\d+)\b', stripped)
+                if match and not match.group(1).startswith('p2p-dev-'):
+                    resolved = match.group(1)
+                    logging.warning("Resolved NetworkManager P2P device %s to group interface %s from nmcli", device, resolved)
+                    return resolved
+
+        interfaces = self._run_wpa_cli('interface')
+        if interfaces:
+            for line in interfaces.splitlines():
+                candidate = line.strip().strip("'")
+                if candidate.startswith('p2p-') and not candidate.startswith('p2p-dev-'):
+                    logging.warning("Resolved P2P group interface from wpa_cli interface: %s", candidate)
+                    return candidate
+
+        logging.warning("Unable to resolve P2P group interface from device %s", device)
+        return device
+
     def _refresh_active_p2p_connection(self, preferred_name=None, peer=None):
         active = self._nm_active_p2p_connections()
         selected = None
@@ -313,7 +348,8 @@ class P2pController:
         if selected is None:
             return False
 
-        self.active_connection_name, self.active_group_ifname = selected
+        self.active_connection_name = selected[0]
+        self.active_group_ifname = self._resolve_p2p_group_interface(selected[1])
         if peer:
             self.active_peer = peer
         self._refresh_group_status()
@@ -322,6 +358,8 @@ class P2pController:
     def _refresh_group_status(self):
         if not self.active_group_ifname:
             return
+        if self.active_group_ifname.startswith('p2p-dev-'):
+            self.active_group_ifname = self._resolve_p2p_group_interface(self.active_group_ifname)
         status = self._run_wpa_cli_for_interface(self.active_group_ifname, 'status')
         if not status:
             return
@@ -549,9 +587,12 @@ class P2pController:
         return self._get_current_network_id()
 
     def getNetworkInterfaceName(self):
-        if not self.active_group_ifname:
-            self._refresh_active_p2p_connection(self.active_connection_name, self.active_peer)
-        return self.active_group_ifname or self.interface or self._ensure_interface() or ""
+        self._refresh_active_p2p_connection(self.active_connection_name, self.active_peer)
+        if self.active_group_ifname and self.active_group_ifname.startswith('p2p-dev-'):
+            self.active_group_ifname = self._resolve_p2p_group_interface(self.active_group_ifname)
+        ret = self.active_group_ifname or self.interface or self._ensure_interface() or ""
+        logging.warning("Returning P2P network interface name: %s", ret)
+        return ret
 
     def getNetworkSsid(self):
         self._refresh_group_status()
