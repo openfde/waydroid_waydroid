@@ -8,6 +8,7 @@ import re
 import shlex
 import subprocess
 import threading
+import time
 
 from tools.interfaces import IP2p, ISupplicantP2pNetwork, p2p_callback
 from tools.services.p2p_monitor import P2pEventMonitor
@@ -126,6 +127,9 @@ class P2pController:
         self.active_ssid = ""
         self.active_bssid = ""
         self.active_client_list = ""
+        self.recently_removed_ifname = None
+        self.recently_removed_at = 0.0
+        self._sanitize_saved_p2p_connections()
 
     def _run_wpa_cli(self, *args):
         command = ['wpa_cli']
@@ -256,12 +260,31 @@ class P2pController:
     def _nm_connection_exists(self, name):
         return self._run_nmcli('connection', 'show', name) is not None
 
+    def _nm_delete_p2p_connection(self, name):
+        if not name or not self._nm_connection_exists(name):
+            return
+        output = self._run_nmcli('connection', 'delete', name)
+        if output is None:
+            logging.warning("Failed to delete NetworkManager P2P connection %s", name)
+        else:
+            logging.info("Deleted NetworkManager P2P connection %s", name)
+
+    def _nm_disable_autoconnect(self, name):
+        self._run_nmcli('connection', 'modify', name,
+                        'connection.autoconnect', 'no')
+
+    def _sanitize_saved_p2p_connections(self):
+        for name in self._nm_saved_p2p_connections():
+            logging.info("Disabling autoconnect on leftover P2P connection %s", name)
+            self._nm_disable_autoconnect(name)
+
     def _nm_ensure_p2p_connection(self, name, peer):
         if self._nm_connection_exists(name):
             logging.warning("Updating existing NetworkManager P2P connection %s for peer %s", name, peer)
             output = self._run_nmcli(
                 'connection', 'modify', name,
                 'wifi-p2p.peer', peer,
+                'connection.autoconnect', 'no',
                 'ipv4.method', 'auto')
             logging.warning("NetworkManager P2P connection modify result for %s: %s", name, output)
             return output is not None
@@ -271,6 +294,7 @@ class P2pController:
             'type', 'wifi-p2p',
             'wifi-p2p.peer', peer,
             'con-name', name,
+            'connection.autoconnect', 'no',
             'ipv4.method', 'auto')
         logging.warning("NetworkManager P2P connection add result for %s: %s", name, output)
         if output is not None:
@@ -283,6 +307,7 @@ class P2pController:
             'type', 'wifi-p2p',
             'wifi-p2p.peer', peer,
             'con-name', name,
+            'connection.autoconnect', 'no',
             'ipv4.method', 'auto')
         logging.info("NetworkManager P2P connection recreate result for %s: %s", name, output)
         return output is not None
@@ -383,6 +408,45 @@ class P2pController:
         self.active_bssid = ""
         self.active_client_list = ""
 
+    def _teardown_active_group(self):
+        """Bring the active NetworkManager P2P connection down and delete its
+        profile, so NetworkManager cannot reactivate it on its own later."""
+        name = self.active_connection_name
+        if name:
+            self._run_nmcli('connection', 'down', name)
+            self._nm_delete_p2p_connection(name)
+        self.recently_removed_ifname = self.active_group_ifname
+        self.recently_removed_at = time.time()
+        self._clear_active_group()
+
+    def handle_group_removed_event(self, ifname):
+        """Handle a P2P-GROUP-REMOVED event reported by the monitor.
+
+        Returns True if this teardown was already handled locally by
+        cancelConnect/p2p_group_remove (which already dispatched the
+        binder event), so the caller should not dispatch it again.
+        """
+        if time.time() - self.recently_removed_at < 15 and (
+                not ifname or not self.recently_removed_ifname
+                or ifname == self.recently_removed_ifname):
+            return True
+
+        tracked = (self.active_connection_name or self.active_group_ifname) and (
+                not ifname or not self.active_group_ifname
+                or ifname == self.active_group_ifname)
+        if tracked:
+            # The peer or wpa_supplicant removed the group on its own:
+            # tear the NetworkManager profile down and delete it.
+            self._teardown_active_group()
+        else:
+            # A group we do not track: still clean up any NetworkManager
+            # profile bound to that group interface.
+            for name, device in self._nm_active_p2p_connections():
+                if not ifname or self._resolve_p2p_group_interface(device) == ifname:
+                    self._run_nmcli('connection', 'down', name)
+                    self._nm_delete_p2p_connection(name)
+        return False
+
     def _emit_nm_connection_success(self):
         dispatch_event('onGoNegotiationCompleted', int(p2p_callback.P2pStatusCode.SUCCESS))
         if self.active_group_ifname:
@@ -459,9 +523,10 @@ class P2pController:
 
     def cancelConnect(self):
         if self.active_connection_name:
-            self._run_nmcli('connection', 'down', self.active_connection_name)
-            dispatch_event('onGroupRemoved', self.active_group_ifname or "", self.active_is_go)
-            self._clear_active_group()
+            group_ifname = self.active_group_ifname or ""
+            is_go = self.active_is_go
+            self._teardown_active_group()
+            dispatch_event('onGroupRemoved', group_ifname, is_go)
         else:
             self._run_p2p_expect_ok('p2p_cancel')
 
@@ -513,9 +578,10 @@ class P2pController:
         self._refresh_active_p2p_connection(self.active_connection_name, self.active_peer)
         connection_name = self.active_connection_name
         if connection_name and (not ifname or self.active_group_ifname == ifname):
-            self._run_nmcli('connection', 'down', connection_name)
-            dispatch_event('onGroupRemoved', self.active_group_ifname or ifname or "", self.active_is_go)
-            self._clear_active_group()
+            group_ifname = self.active_group_ifname or ifname or ""
+            is_go = self.active_is_go
+            self._teardown_active_group()
+            dispatch_event('onGroupRemoved', group_ifname, is_go)
         else:
             logging.warning("No active NetworkManager P2P group to remove: %s", ifname)
 
@@ -926,8 +992,15 @@ def start(args):
                 p2p_get_device_address,
             )
 
+    def monitor_dispatch(method_name, *args):
+        if method_name == 'onGroupRemoved':
+            controller = initData['controller']
+            if controller and controller.handle_group_removed_event(args[0] if args else ""):
+                return
+        dispatch_event(method_name, *args)
+
     initData['stopping'] = False
-    initData['monitor'] = P2pEventMonitor(dispatch_event)
+    initData['monitor'] = P2pEventMonitor(monitor_dispatch)
     initData['monitor'].start()
     if not initData.get('network_service_started'):
         initData['network_service_started'] = True
