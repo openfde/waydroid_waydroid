@@ -134,6 +134,7 @@ class P2pController:
         self._connect_cancel_event = None
         self._pending_connection_name = None
         self._connect_process = None
+        self._negotiation_status = None
         self._sanitize_saved_p2p_connections()
 
     def _run_wpa_cli(self, *args):
@@ -161,7 +162,7 @@ class P2pController:
                 logging.error("wpa_cli failed with exit code %s", result.returncode)
             return None
         if stderr:
-            logging.debug("wpa_cli stderr: %s", stderr)
+            logging.error("wpa_cli stderr: %s", stderr)
         return stdout
 
     def _run_wpa_cli_for_interface(self, interface, *args):
@@ -203,9 +204,8 @@ class P2pController:
         if result.returncode != 0:
             logging.error("nmcli failed (%s): %s", " ".join(command), stderr or result.returncode)
             return None
-        logging.info("nmcli succeeded (%s): %s", " ".join(command), stdout)
         if stderr:
-            logging.debug("nmcli stderr: %s", stderr)
+            logging.error("nmcli stderr: %s", stderr)
         return stdout
 
     def _run_nmcli_connection_up(self, connection_name, cancel_event, timeout=60):
@@ -277,7 +277,6 @@ class P2pController:
 
     def _p2p_peer_exists(self, peer):
         output = self.p2p_peer(peer)
-        logging.info("wpa_cli p2p_peer %s output: %s", peer, output)
         return bool(output and output != 'FAIL')
 
     def _nm_connection_name(self, peer):
@@ -481,34 +480,6 @@ class P2pController:
         self.recently_removed_at = time.time()
         self._clear_active_group()
 
-    def handle_group_removed_event(self, ifname):
-        """Handle a P2P-GROUP-REMOVED event reported by the monitor.
-
-        Returns True if this teardown was already handled locally by
-        cancelConnect/p2p_group_remove (which already dispatched the
-        binder event), so the caller should not dispatch it again.
-        """
-        if time.time() - self.recently_removed_at < 15 and (
-                not ifname or not self.recently_removed_ifname
-                or ifname == self.recently_removed_ifname):
-            return True
-
-        tracked = (self.active_connection_name or self.active_group_ifname) and (
-                not ifname or not self.active_group_ifname
-                or ifname == self.active_group_ifname)
-        if tracked:
-            # The peer or wpa_supplicant removed the group on its own:
-            # tear the NetworkManager profile down and delete it.
-            self._teardown_active_group()
-        else:
-            # A group we do not track: still clean up any NetworkManager
-            # profile bound to that group interface.
-            for name, device in self._nm_active_p2p_connections():
-                if not ifname or self._resolve_p2p_group_interface(device) == ifname:
-                    self._run_nmcli('connection', 'down', name)
-                    self._nm_delete_p2p_connection(name)
-        return False
-
     def _emit_nm_connection_success(self):
         dispatch_event('onGoNegotiationCompleted', int(p2p_callback.P2pStatusCode.SUCCESS))
         if self.active_group_ifname:
@@ -524,7 +495,35 @@ class P2pController:
                 True)
 
     def _emit_nm_connection_failure(self):
-        dispatch_event('onGoNegotiationCompleted', int(p2p_callback.P2pStatusCode.UNKNOWN_ERROR))
+        # wpa_supplicant may report the real failure reason (e.g.
+        # REJECTED_BY_USER when the peer declined) slightly after nmcli
+        # gives up, so wait a short grace period for it.
+        deadline = time.time() + 3.0
+        while time.time() < deadline:
+            with self._connect_lock:
+                status = self._negotiation_status
+            if status is not None:
+                # The monitor already delivered this detailed status to the
+                # client; do not overwrite it with a generic error.
+                logging.info("Connection failed; negotiation status %s already delivered",
+                             status)
+                return
+            time.sleep(0.1)
+        dispatch_event('onGoNegotiationCompleted',
+                       int(p2p_callback.P2pStatusCode.UNKNOWN_ERROR))
+
+    def note_negotiation_result(self, status):
+        """Record a negotiation/invitation result reported by the event
+        monitor while a connect attempt is in progress."""
+        try:
+            status = int(status)
+        except (TypeError, ValueError):
+            return
+        with self._connect_lock:
+            if not self._connect_in_progress:
+                return
+            if status != int(p2p_callback.P2pStatusCode.SUCCESS):
+                self._negotiation_status = status
 
     def _ensure_interface(self):
         if self.interface:
@@ -630,6 +629,7 @@ class P2pController:
                 logging.warning("Ignoring P2P connect request while another connection attempt is in progress")
                 return
             self._connect_in_progress = True
+            self._negotiation_status = None
             cancel_event = threading.Event()
             self._connect_cancel_event = cancel_event
             self._pending_connection_name = self._nm_connection_name(
@@ -1138,10 +1138,9 @@ def start(args):
             )
 
     def monitor_dispatch(method_name, *args):
-        #if method_name == 'onGroupRemoved':
-            #controller = initData['controller']
-            #if controller and controller.handle_group_removed_event(args[0] if args else ""):
-                #return
+        controller = initData['controller']
+        if controller and method_name in ('onGoNegotiationCompleted', 'onInvitationResult'):
+            controller.note_negotiation_result(args[-1] if args else None)
         dispatch_event(method_name, *args)
 
     initData['stopping'] = False
