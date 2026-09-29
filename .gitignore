@@ -1,5 +1,7 @@
 # Pycharm
 /.idea
+.Ds*
+tools/.DS
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
