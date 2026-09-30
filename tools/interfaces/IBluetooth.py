@@ -14,7 +14,7 @@ def addService(args, registerCallback, unregisterCallback, init, cleanup, enable
                   disable, getAdapterProperties, getAdapterProperty, setAdapterProperty,
                   createBond, removeBond, cancelBond, pairingIsBusy, getConnectionState,
                   startDiscovery, cancelDiscovery, connect, disconnect, setDeviceProperty,
-                  startMonitoring):
+                  isEnabled, sspReply, pinReply, getAdapterName):
     helpers.drivers.loadBinderNodes(args)
     try:
         serviceManager = gbinder.ServiceManager("/dev/" + args.BINDER_DRIVER, args.SERVICE_MANAGER_PROTOCOL, args.BINDER_PROTOCOL)
@@ -41,6 +41,10 @@ def addService(args, registerCallback, unregisterCallback, init, cleanup, enable
         CONNECT = 17
         DISCONNECT = 18
         SET_DEVICE_PROPERTY = 19
+        IS_ENABLED = 20
+        SSP_REPLY = 21
+        PIN_REPLY = 22
+        GET_ADAPTER_NAME = 23
 
     def responseHandlerThread(req, code, flags, localResponse):
         reader = req.init_reader()
@@ -74,6 +78,10 @@ def addService(args, registerCallback, unregisterCallback, init, cleanup, enable
             ret = startDiscovery()
             localResponse.append_int32(0)
             localResponse.append_bool(ret)
+        elif code == Transaction.IS_ENABLED.value:
+            ret = isEnabled()
+            localResponse.append_int32(0)
+            localResponse.append_bool(ret)
         req.complete(localResponse, 0)
     
     def responseHandler(req, code, flags):
@@ -85,9 +93,9 @@ def addService(args, registerCallback, unregisterCallback, init, cleanup, enable
             Transaction.GET_CONNECTION_STATE.value,
             Transaction.GET_ADAPTER_PROPERTIES.value,
             Transaction.GET_ADAPTER_PROPERTY.value,
-            Transaction.START_DISCOVERY.value
+            Transaction.START_DISCOVERY.value,
+            Transaction.IS_ENABLED.value
         ]
-        startMonitoring()
         if code in asyncTransaction:
             localResponse = response.new_reply()
             req.block()
@@ -156,6 +164,25 @@ def addService(args, registerCallback, unregisterCallback, init, cleanup, enable
             ret = setDeviceProperty(address, type, val)
             localResponse.append_int32(0)
             localResponse.append_bool(ret)
+        elif code == Transaction.SSP_REPLY.value:
+            address = reader.read_string16()
+            status, type = reader.read_int32()
+            status, accept = reader.read_bool()
+            status, passkey = reader.read_int32()
+            ret = sspReply(address, type, accept, passkey)
+            localResponse.append_int32(0)
+            localResponse.append_bool(ret)
+        elif code == Transaction.PIN_REPLY.value:
+            address = reader.read_string16()
+            status, accept = reader.read_bool()
+            pin = reader.read_string16()
+            ret = pinReply(address, accept, pin)
+            localResponse.append_int32(0)
+            localResponse.append_bool(ret)
+        elif code == Transaction.GET_ADAPTER_NAME.value:
+            ret = getAdapterName()
+            localResponse.append_int32(0)
+            localResponse.append_string16(ret)
         else:
             logging.error("{} unknown code: {}".format(INTERFACE, code))
             localResponse.append_int32(0)
