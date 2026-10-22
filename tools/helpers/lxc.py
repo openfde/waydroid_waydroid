@@ -151,38 +151,6 @@ def get_apparmor_status(args):
     return enabled
 
 
-def is_target_os(target):
-    try:
-        with open('/etc/os-release','r') as f:
-            os_info = f.read()
-        for line in os_info.splitlines():
-            if line.startswith("ID="):
-                return line.split("=")[1].strip().lower() == target
-        return False
-    except FileNotFoundError:
-        try:
-            with open('/etc/lsb-release','r') as f:
-                os_info = f.read()
-            for line in os_info.splitlines():
-                if line.startswith("DISTRIB_ID="):
-                    return line.split("=")[1].strip().lower() == target
-                return False
-        except FileNotFoundError:
-            return False
-
-def is_kylin_v11():
-    try:
-        with open('/etc/os-release','r') as f:
-            os_info = f.read().lower()
-            return True if 'id=kylin' in os_info and 'version_id="v11"' in os_info else False
-    except FileNotFoundError:
-        try:
-            with open('/etc/lsb-release','r') as f:
-                os_info = f.read().lower()
-                return True if 'distrib_id=kylin' in os_info and 'distrib_release=v11' in os_info else False
-        except FileNotFoundError:
-            return False
-
 def set_lxc_config(args):
     lxc_path = tools.config.defaults["lxc"] + "/waydroid"
     lxc_ver = get_lxc_version(args)
@@ -207,17 +175,6 @@ def set_lxc_config(args):
     tools.helpers.run.user(args, command)
     command = ["sed", "-i", "s/LXCARCH/{}/".format(platform.machine()), lxc_path + "/config"]
     tools.helpers.run.user(args, command)
-
-    if is_target_os("ubuntu") or is_target_os("deepin") or is_target_os("debian"):
-        command = ["sed", "-i", "s/proc/proc:rw/".format(platform.machine()), lxc_path + "/config"]
-        tools.helpers.run.user(args, command)
-        command = ["sed", "-i", "s/cgroup:ro/cgroup:rw/".format(platform.machine()), lxc_path + "/config"]
-        tools.helpers.run.user(args, command)
-
-    if is_kylin_v11():
-        command = ["sed", "-i", "s/cgroup:ro/cgroup:rw/".format(platform.machine()), lxc_path + "/config"]
-        tools.helpers.run.user(args, command)
-
     command = ["cp", "-fpr", seccomp_profile, lxc_path + "/waydroid.seccomp"]
     tools.helpers.run.user(args, command)
     if get_apparmor_status(args):
@@ -274,9 +231,22 @@ def generate_session_lxc_config(args, session):
         raise OSError("Failed to bind volumes")
     if not make_entry("/var/lib/fde/sockets", "sockets", options="bind,create=dir 0 0"):
         raise OSError("Failed to bind sockets")
-    BootId = tools.helpers.drivers.createAshmemAppendBootId()
-    if not (BootId and make_entry(f"/dev/ashmem{BootId}")):
-        raise OSError("Failed to createAshmemAppendBootId")
+    if not os.path.exists("/proc/config.gz"):
+        kernel_config = "/boot/config-" + os.uname().release
+        if os.path.exists(kernel_config):
+            fdeconfigs_dir = os.path.join(session["xdg_data_home"],"fdeconfigs")
+            fdeconfigs = os.path.join(fdeconfigs_dir,"config")
+            if not os.path.exists(fdeconfigs_dir):
+                os.makedirs(fdeconfigs_dir, mode=0o755)
+            shutil.copy(kernel_config, fdeconfigs)
+            if not make_entry(fdeconfigs_dir, "configs", options="bind,create=dir 0 0"):
+                raise OSError("Failed to bind configs")
+        else:
+            logging.error("Couldn't find config for the kernel " + fdeconfigs_dir)
+    if  os.path.exists("/dev/ashmem"):
+        BootId = tools.helpers.drivers.createAshmemAppendBootId()
+        if not (BootId and make_entry(f"/dev/ashmem{BootId}")):
+            raise OSError("Failed to createAshmemAppendBootId")
 
     lxc_path = tools.config.defaults["lxc"] + "/waydroid"
     config_nodes_tmp_path = args.work + "/config_session"
