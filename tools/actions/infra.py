@@ -86,8 +86,7 @@ def stopMonitor(self):
       except Exception:
         logging.exception("Failed to stop monitors")
 
-def service(args, looper):
-  dbus_obj = DbusInfraManager(looper, dbus.SystemBus(), '/InfraManager', args)
+def service(args, looper, dbus_obj):
   looper.run()
 
 def stop(args, quit_session=True):
@@ -111,13 +110,15 @@ def start(args):
     logging.error("Infra service is already running")
     return
   mainloop = GLib.MainLoop()
+  dbus_obj = DbusInfraManager(mainloop, dbus.SystemBus(), '/InfraManager', args)
   def sigint_handler(data):
+      stopMonitor(dbus_obj)
       stop(args)
       mainloop.quit()
 
   GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGINT, sigint_handler, None)
   GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGTERM, sigint_handler, None)
-  service(args, mainloop)
+  service(args, mainloop, dbus_obj)
 
 def do_start(args):
   services.task_manager.start(args)
