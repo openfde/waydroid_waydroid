@@ -171,16 +171,12 @@ def do_stop(args, looper):
 def stop(args):
     if 'DISPLAY' in os.environ:
         os.system("xset r on")
+    # Stop the infra service. Its Stop() closes the inotify watchers and quits
+    # its own mainloop, so the infra process exits together with the session.
     try:
         tools.helpers.ipc.DBusInfraService().Stop()
     except dbus.DBusException as e:
         logging.warning("Infra Stop failed (continuing): " + str(e))
-    # Ask infra to close its inotify watchers from the CLI process (outside any
-    # D-Bus method handler) so it is not subject to in-handler blocking/deadlock.
-    try:
-        tools.helpers.ipc.DBusInfraService().StopMonitor()
-    except Exception as e:
-        logging.warning("Infra StopMonitor failed (continuing): " + str(e))
     try:
         tools.helpers.ipc.DBusSessionService().Stop()
     except dbus.DBusException:

@@ -244,7 +244,7 @@ def start(args):
 
     global stopping
     stopping = False
-    args.task_manager = threading.Thread(target=service_thread)
+    args.task_manager = threading.Thread(target=service_thread, daemon=True)
     args.task_manager.start()
 
 

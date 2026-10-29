@@ -32,10 +32,16 @@ class DbusInfraManager(dbus.service.Object):
   def Stop(self):
      stopMonitor(self)
      stop(self.args)
+     # Quit the infra mainloop so the process exits together with the session.
+     try:
+       self.looper.quit()
+     except Exception:
+       pass
 
   @dbus.service.method("com.openfde.InfraManager", in_signature='a{ss}', out_signature='')
   def Monitor(self, rootDirDict):
       # 监听 rootDirDict 的所有 value
+      self._monitors_stopped = False
       if not hasattr(self, "_watchers"):
         self._watchers = []
       if not hasattr(self, "_watcher_threads"):
@@ -63,7 +69,9 @@ class DbusInfraManager(dbus.service.Object):
 
 
 def stopMonitor(self):
-      logging.info("infra stop monitor")
+      if not getattr(self, "_monitors_stopped", False):
+        self._monitors_stopped = True
+        logging.info("infra stop monitor")
       try:
         if hasattr(self, "_watchers"):
           for w in self._watchers:

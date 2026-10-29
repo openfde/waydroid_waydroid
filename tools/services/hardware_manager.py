@@ -45,7 +45,7 @@ def start(args):
 
     global stopping
     stopping = False
-    args.hardware_manager = threading.Thread(target=service_thread)
+    args.hardware_manager = threading.Thread(target=service_thread, daemon=True)
     args.hardware_manager.start()
 
 def stop(args):
