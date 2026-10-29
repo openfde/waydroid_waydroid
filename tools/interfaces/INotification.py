@@ -24,7 +24,7 @@ class INotification:
             TRANSACTION_desktopfile_updated, request)
 
         if status:
-            logging.error("Sending reply failed")
+            logging.error("Sending inotify reply failed")
         return None
 
 
@@ -36,7 +36,7 @@ class INotification:
             TRANSACTION_desktopfile_updated, request)
 
         if status:
-            logging.error("Sending reply failed")
+            logging.error("Sending inotify reply failed")
         return None
 
 
