@@ -38,7 +38,7 @@ def start(args):
         target=args.netservice.start,
         args=(args,),
         name=f"netservice-thread",
-        daemon=False,
+        daemon=True,
         )
         args.t.start()
 
@@ -505,19 +505,19 @@ def start(args):
     args.net_manager.start()
 
 def stop(args):
-    try:
-        if args.t:
-            args.netservice.stop()
-            args.t.join()
-    except Exception as e:
-        logging.exception("net service stop error!")
-        
     global stopping
     stopping = True
-    args.netservice = None    
+    try:
+        if args.netservice:
+            args.netservice.stop()
+    except Exception as e:
+        logging.exception("net service stop error!")
     try:
         if args.netLoop:
             args.netLoop.quit()
     except AttributeError:
         logging.debug("net service is not even started")
+    args.netservice = None
+    # NOTE: args.t is a daemon thread, so we must NOT join() it here; doing so
+    # could block do_stop forever if the binder service thread is stuck.
 

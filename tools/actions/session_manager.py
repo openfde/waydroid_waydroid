@@ -137,6 +137,13 @@ def start(args, unlocked_cb=None, background=True):
 
 def do_stop(args, looper):
     tools.config.session_stopping = True
+    # Quit the mainloop first so the process can always tear down, even if a
+    # later cleanup step blocks or raises (e.g. a service stop calling join()
+    # on a stuck binder thread, or StopMonitor() failing because infra is gone).
+    try:
+        looper.quit()
+    except Exception:
+        pass
     if 'DISPLAY' in os.environ:
         if os.getuid() != 1000:
             try:
@@ -146,13 +153,19 @@ def do_stop(args, looper):
             except Exception as e:
                 subprocess.run(['xhost', '-'], check=False)
                 logging.warning(f"Failed to add xhost rule for localuser: {e}")
-    services.user_manager.stop(args)
-    services.clipboard_manager.stop(args)
-    services.net_manager.stop(args)
-    services.light_manager.stop(args)
-    services.bluetooth_manager.stop(args)
-    tools.helpers.ipc.DBusInfraService().StopMonitor()
-    looper.quit()
+    for stop in (services.user_manager.stop,
+                 services.clipboard_manager.stop,
+                 services.net_manager.stop,
+                 services.light_manager.stop,
+                 services.bluetooth_manager.stop):
+        try:
+            stop(args)
+        except Exception as e:
+            logging.warning("Error while stopping a session service: " + str(e))
+    try:
+        tools.helpers.ipc.DBusInfraService().StopMonitor()
+    except Exception as e:
+        logging.debug("StopMonitor failed: " + str(e))
 
 def stop(args):
     if 'DISPLAY' in os.environ:

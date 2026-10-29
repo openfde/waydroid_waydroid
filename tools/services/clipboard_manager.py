@@ -47,7 +47,7 @@ def start(args):
     if canClip:
         global stopping
         stopping = False
-        args.clipboard_manager = threading.Thread(target=service_thread)
+        args.clipboard_manager = threading.Thread(target=service_thread, daemon=True)
         args.clipboard_manager.start()
     else:
         logging.warning("Failed to start Clipboard manager service, check logs")

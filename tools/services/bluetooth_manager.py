@@ -184,7 +184,7 @@ def start(args):
                 setDeviceProperty, isEnabled, sspReply, pinReply, getAdapterName)
 
     initData['stopping'] = False
-    args.bluetoothManager = threading.Thread(target=serviceThread)
+    args.bluetoothManager = threading.Thread(target=serviceThread, daemon=True)
     args.bluetoothManager.start()
 
 def stop(args):
