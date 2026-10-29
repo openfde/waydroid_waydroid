@@ -13,6 +13,11 @@ from tools.config.save import save
 # Exported variables (internal configuration)
 #
 version = "1.4.1"
+
+# Shared flag toggled to True when the user requests to stop the session
+# (via "waydroid session stop" or a stop signal). Long-running retry loops
+# (e.g. the interface get_service waits) check this to abort promptly.
+session_stopping = False
 tools_src = os.path.normpath(os.path.realpath(__file__) + "/../../..")
 
 # Keys saved in the config file (mostly what we ask in 'waydroid init')

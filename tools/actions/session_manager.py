@@ -34,6 +34,7 @@ def service(args, looper):
     looper.run()
 
 def start(args, unlocked_cb=None, background=True):
+    tools.config.session_stopping = False
     try:
         name = dbus.service.BusName("id.waydro.Session", dbus.SessionBus(), do_not_queue=True)
     except dbus.exceptions.NameExistsException:
@@ -135,6 +136,7 @@ def start(args, unlocked_cb=None, background=True):
     service(args, mainloop)
 
 def do_stop(args, looper):
+    tools.config.session_stopping = True
     if 'DISPLAY' in os.environ:
         if os.getuid() != 1000:
             try:
