@@ -163,7 +163,7 @@ def start(args, session, unlocked_cb=None):
 
     global stopping
     stopping = False
-    args.user_manager = threading.Thread(target=service_thread)
+    args.user_manager = threading.Thread(target=service_thread, daemon=True)
     args.user_manager.start()
 
 def stop(args):

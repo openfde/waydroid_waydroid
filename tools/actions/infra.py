@@ -30,11 +30,18 @@ class DbusInfraManager(dbus.service.Object):
 
   @dbus.service.method("com.openfde.InfraManager", in_signature='', out_signature='')
   def Stop(self):
+     stopMonitor(self)
      stop(self.args)
+     # Quit the infra mainloop so the process exits together with the session.
+     try:
+       self.looper.quit()
+     except Exception:
+       pass
 
   @dbus.service.method("com.openfde.InfraManager", in_signature='a{ss}', out_signature='')
   def Monitor(self, rootDirDict):
       # 监听 rootDirDict 的所有 value
+      self._monitors_stopped = False
       if not hasattr(self, "_watchers"):
         self._watchers = []
       if not hasattr(self, "_watcher_threads"):
@@ -48,7 +55,7 @@ class DbusInfraManager(dbus.service.Object):
           t = threading.Thread(
             target=watcher.run,
             name=f"watcher-thread-{abs(hash(rootDir))}",
-            daemon=False,
+            daemon=True,
           )
           t.start()
           self._watchers.append(watcher)
@@ -62,7 +69,9 @@ class DbusInfraManager(dbus.service.Object):
 
 
 def stopMonitor(self):
-      logging.info("infra stop monitor")
+      if not getattr(self, "_monitors_stopped", False):
+        self._monitors_stopped = True
+        logging.info("infra stop monitor")
       try:
         if hasattr(self, "_watchers"):
           for w in self._watchers:
@@ -85,8 +94,7 @@ def stopMonitor(self):
       except Exception:
         logging.exception("Failed to stop monitors")
 
-def service(args, looper):
-  dbus_obj = DbusInfraManager(looper, dbus.SystemBus(), '/InfraManager', args)
+def service(args, looper, dbus_obj):
   looper.run()
 
 def stop(args, quit_session=True):
@@ -110,13 +118,15 @@ def start(args):
     logging.error("Infra service is already running")
     return
   mainloop = GLib.MainLoop()
+  dbus_obj = DbusInfraManager(mainloop, dbus.SystemBus(), '/InfraManager', args)
   def sigint_handler(data):
+      stopMonitor(dbus_obj)
       stop(args)
       mainloop.quit()
 
   GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGINT, sigint_handler, None)
   GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGTERM, sigint_handler, None)
-  service(args, mainloop)
+  service(args, mainloop, dbus_obj)
 
 def do_start(args):
   services.task_manager.start(args)

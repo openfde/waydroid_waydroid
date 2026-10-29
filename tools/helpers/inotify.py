@@ -154,30 +154,31 @@ class InotifyRecursiveWatcher:
         self.watched_dirs.discard(dir_to_remove)
 
   def stop(self):
-    """停止监听"""
+    """停止监听并立即释放 inotify fd，无论 run() 是否仍在阻塞、监听线程是否已退出。"""
     self._stopped = True
+    self.do_stop()
 
   def do_stop(self):
-    """安全停止所有资源"""
-    notifier = getattr(self, "notifier", None)
-    wm = getattr(self, "wm", None)
-
-    # 安全停止 notifier
-    with suppress(Exception):
-        if notifier is not None:
-            notifier.stop()
-
-    # 安全关闭 watch manager
-    with suppress(Exception):
-        if wm is not None:
-            wm.close()
-
-    # 释放引用，避免重复使用
-    self.notifier = None
-    self.wm = None
-
-    # 清理内部映射与集合（线程安全）
+    """安全停止所有资源。幂等：可重复调用。"""
     with self._lock:
+      notifier = self.notifier
+      wm = self.wm
+
+      # 停止 notifier 循环（best-effort）
+      if notifier is not None:
+        with suppress(Exception):
+          notifier.stop()
+
+      # 关闭 watch manager —— 这一步才会真正释放 inotify fd
+      if wm is not None:
+        with suppress(Exception):
+          wm.close()
+
+      # 释放引用，避免重复使用
+      self.notifier = None
+      self.wm = None
+
+      # 清理内部映射与集合
       self.wd_to_path.clear()
       self.watched_dirs.clear()
 
@@ -191,9 +192,15 @@ class InotifyRecursiveWatcher:
     self.add_watch_recursive(self.root)
     try:
       while not getattr(self, "_stopped", False):
-        self.notifier.process_events()
-        if self.notifier.check_events(timeout=1000):
-          self.notifier.read_events()
+        try:
+          self.notifier.process_events()
+          if self.notifier.check_events(timeout=1000):
+            self.notifier.read_events()
+        except Exception:
+          # watch manager 可能已被 stop() 关闭，直接退出循环
+          if getattr(self, "_stopped", False) or self.wm is None:
+            break
+          logging.exception("inotify event loop error")
     finally:
       self.do_stop()
 

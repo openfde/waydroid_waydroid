@@ -196,7 +196,7 @@ def start(args):
 
     global gStopping
     gStopping = False
-    args.light_manager = threading.Thread(target=service_thread)
+    args.light_manager = threading.Thread(target=service_thread, daemon=True)
     args.light_manager.start()
 
 def stop(args):

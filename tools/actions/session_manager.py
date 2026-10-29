@@ -34,6 +34,7 @@ def service(args, looper):
     looper.run()
 
 def start(args, unlocked_cb=None, background=True):
+    tools.config.session_stopping = False
     try:
         name = dbus.service.BusName("id.waydro.Session", dbus.SessionBus(), do_not_queue=True)
     except dbus.exceptions.NameExistsException:
@@ -135,6 +136,14 @@ def start(args, unlocked_cb=None, background=True):
     service(args, mainloop)
 
 def do_stop(args, looper):
+    tools.config.session_stopping = True
+    # Quit the mainloop first so the process can always tear down, even if a
+    # later cleanup step blocks or raises (e.g. a service stop calling join()
+    # on a stuck binder thread, or StopMonitor() failing because infra is gone).
+    try:
+        looper.quit()
+    except Exception:
+        pass
     if 'DISPLAY' in os.environ:
         if os.getuid() != 1000:
             try:
@@ -144,21 +153,30 @@ def do_stop(args, looper):
             except Exception as e:
                 subprocess.run(['xhost', '-'], check=False)
                 logging.warning(f"Failed to add xhost rule for localuser: {e}")
-    services.user_manager.stop(args)
-    services.clipboard_manager.stop(args)
-    services.net_manager.stop(args)
-    services.light_manager.stop(args)
-    services.bluetooth_manager.stop(args)
-    tools.helpers.ipc.DBusInfraService().StopMonitor()
-    looper.quit()
+    for stop in (services.user_manager.stop,
+                 services.clipboard_manager.stop,
+                 services.net_manager.stop,
+                 services.light_manager.stop,
+                 services.bluetooth_manager.stop):
+        try:
+            stop(args)
+        except Exception as e:
+            logging.warning("Error while stopping a session service: " + str(e))
+    try:
+        logging.info("Requesting infra StopMonitor to close inotify watchers")
+        tools.helpers.ipc.DBusInfraService().StopMonitor()
+    except Exception as e:
+        logging.warning("Failed to request infra StopMonitor: " + str(e))
 
 def stop(args):
     if 'DISPLAY' in os.environ:
         os.system("xset r on")
+    # Stop the infra service. Its Stop() closes the inotify watchers and quits
+    # its own mainloop, so the infra process exits together with the session.
     try:
         tools.helpers.ipc.DBusInfraService().Stop()
-    except dbus.DBusException:
-        pass
+    except dbus.DBusException as e:
+        logging.warning("Infra Stop failed (continuing): " + str(e))
     try:
         tools.helpers.ipc.DBusSessionService().Stop()
     except dbus.DBusException:

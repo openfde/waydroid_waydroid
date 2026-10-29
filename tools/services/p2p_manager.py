@@ -1148,9 +1148,9 @@ def start(args):
     initData['monitor'].start()
     if not initData.get('network_service_started'):
         initData['network_service_started'] = True
-        args.p2pNetworkManager = threading.Thread(target=network_service_thread)
+        args.p2pNetworkManager = threading.Thread(target=network_service_thread, daemon=True)
         args.p2pNetworkManager.start()
-    args.p2pManager = threading.Thread(target=service_thread)
+    args.p2pManager = threading.Thread(target=service_thread, daemon=True)
     args.p2pManager.start()
 
 

@@ -2,6 +2,7 @@ import gbinder
 import logging
 import time
 from tools import helpers
+from tools import config
 from gi.repository import GLib
 import signal
 
@@ -23,7 +24,7 @@ class INotification:
             TRANSACTION_desktopfile_updated, request)
 
         if status:
-            logging.error("Sending reply failed")
+            logging.error("Sending inotify reply failed")
         return None
 
 
@@ -35,7 +36,7 @@ class INotification:
             TRANSACTION_desktopfile_updated, request)
 
         if status:
-            logging.error("Sending reply failed")
+            logging.error("Sending inotify reply failed")
         return None
 
 
@@ -52,10 +53,14 @@ def get_service(args):
             logging.error("Service Manager never appeared")
             return None
 
-    tries = 1000
+    tries = 400
 
     remote, status = serviceManager.get_service_sync(SERVICE_NAME)
     while(not remote):
+        if config.session_stopping:
+            logging.warning(
+                "Session stop requested, aborting wait for service {}".format(SERVICE_NAME))
+            return None
         if tries > 0:
             logging.warning(
                 "Failed to get service {}, trying again...".format(SERVICE_NAME))
