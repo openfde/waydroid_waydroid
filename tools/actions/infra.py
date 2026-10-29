@@ -30,6 +30,7 @@ class DbusInfraManager(dbus.service.Object):
 
   @dbus.service.method("com.openfde.InfraManager", in_signature='', out_signature='')
   def Stop(self):
+     stopMonitor(self)
      stop(self.args)
 
   @dbus.service.method("com.openfde.InfraManager", in_signature='a{ss}', out_signature='')
@@ -48,7 +49,7 @@ class DbusInfraManager(dbus.service.Object):
           t = threading.Thread(
             target=watcher.run,
             name=f"watcher-thread-{abs(hash(rootDir))}",
-            daemon=False,
+            daemon=True,
           )
           t.start()
           self._watchers.append(watcher)
