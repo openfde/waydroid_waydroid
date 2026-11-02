@@ -27,3 +27,9 @@ If you have found an issue with Waydroid, please [file a bug](https://github.com
 
 If you want to get in contact with the developers please feel free to join the
 *Waydroid* groups in [Matrix](https://matrix.to/#/#waydroid:connolly.tech) or [Telegram](https://t.me/WayDroid).
+
+sudo waydroid init -f 
+
+sudo make install 
+sudo systemctl daemon-reload
+sudo systemctl stop waydroid-container
