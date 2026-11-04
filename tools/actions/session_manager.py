@@ -133,6 +133,7 @@ def start(args, unlocked_cb=None, background=True):
     services.net_manager.start(args)
     services.light_manager.start(args)
     services.bluetooth_manager.start(args)
+    services.wifi_manager.start(args)
     service(args, mainloop)
 
 def do_stop(args, looper):
@@ -157,7 +158,8 @@ def do_stop(args, looper):
                  services.clipboard_manager.stop,
                  services.net_manager.stop,
                  services.light_manager.stop,
-                 services.bluetooth_manager.stop):
+                 services.bluetooth_manager.stop,
+                 services.wifi_manager.stop):
         try:
             stop(args)
         except Exception as e:
