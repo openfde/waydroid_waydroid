@@ -101,7 +101,31 @@ def _security(wpaFlags, rsnFlags):
     return "WPA"
 
 FAKE_ON_NO_HW = True
-FAKE_SSID = "FDE-WiFi"
+
+def _hostUniqueTag() -> str:
+    for path in ("/etc/machine-id", "/var/lib/dbus/machine-id"):
+        try:
+            with open(path, "r") as f:
+                uid = (f.read() or "").strip()
+        except Exception as e:
+            logging.warning("NMWifiBackend: read %s fail: %s" % (path, e))
+            continue
+        if uid:
+            return uid[-4:]
+        return ""
+
+def _buildFakeSsid() -> str:
+    name = "".join(c for c in (socket.gethostname() or "")
+                   if c.isalnum() or c in "-_.").strip("-._")
+    if name:
+        tag = _hostUniqueTag()
+        return ("WiFi-" + name + ("-" + tag if tag else ""))[:32]
+    tag = _hostUniqueTag()
+    if tag:
+        return "WiFi-" + tag
+    return "WiFi"
+
+FAKE_SSID = _buildFakeSsid()
 FAKE_DEV_MAC = "02:11:22:33:44:55"
 FAKE_AP_MAC = "02:AA:BB:CC:DD:EE"
 FAKE_FREQ = 2412

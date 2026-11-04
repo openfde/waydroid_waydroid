@@ -145,7 +145,7 @@ def start(args):
                          getDhcpInfo)
 
     initData['stopping'] = False
-    args.wifiManager = threading.Thread(target=serviceThread)
+    args.wifiManager = threading.Thread(target=serviceThread, daemon=True)
     args.wifiManager.start()
 
 def stop(args):
