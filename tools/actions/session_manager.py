@@ -70,8 +70,16 @@ def start(args, unlocked_cb=None, background=True):
                 logging.error(f"Wayland socket '{wayland_socket_path}' doesn't exist; are you running a Wayland compositor?")
                 sys.exit(1)
     elif os.environ.get("XDG_SESSION_TYPE") == "x11":
-        if not os.path.exists("/tmp/.X11-unix/X0"):
-            logging.error(f"x11 socket /tmp/.X11-unix/X0 doesn't exist; are you running a X11 Server?")
+        # Derive the X11 socket from DISPLAY instead of assuming the hard-coded
+        # display :0 (e.g. DISPLAY=":1" -> /tmp/.X11-unix/X1,
+        # "localhost:10.0" -> /tmp/.X11-unix/X10).
+        display = os.environ.get('DISPLAY', '')
+        if ':' in display:
+            display = display.rsplit(':', 1)[1]
+        display_num = display.split('.', 1)[0] or '0'
+        x11_socket = f"/tmp/.X11-unix/X{display_num}"
+        if not os.path.exists(x11_socket):
+            logging.error(f"x11 socket {x11_socket} doesn't exist; are you running a X11 Server? (DISPLAY={os.environ.get('DISPLAY')})")
             sys.exit(1)
     else:
         logging.error(f""+os.environ.get("XDG_SESSION_TYPE") +" is not support, must one of the x11 or wayland")
