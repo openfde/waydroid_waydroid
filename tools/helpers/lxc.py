@@ -215,7 +215,7 @@ def generate_session_lxc_config(args, session):
             raise OSError("Failed to bind Wayland socket")
     tmppath = "/tmp/.X11-unix"
     if not os.path.exists(tmppath):
-        os.makedirs(path, mode=0o755)  
+        os.makedirs(tmppath, mode=0o755)
     if not make_entry(tmppath, "tmpx11", options="bind,optional 0 0"):
         raise OSError("Failed to bind tmpx11")
 
