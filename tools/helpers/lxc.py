@@ -134,14 +134,31 @@ def generate_nodes_lxc_config(args):
     make_entry("/dev", "dev/block", options="rbind,create=dir,optional 0 0")
 
     #hybris
-    if args.hybris:
+    dri, _ = tools.helpers.gpu.getDriNode(args)
+    gpu_model = tools.helpers.gpu.getKernelDriver(args, os.path.basename(dri))
+    if args.hybris or gpu_model == "nvidia" or gpu_model == "nouveau":
         if os.path.exists("/dev/jmgpu"):
             make_entry("/dev/jmgpu")
+        if os.path.exists("/dev/nvidiactl"):
+            make_entry("/dev/nvidiactl")
+        if os.path.exists("/dev/nvidia0"):
+            make_entry("/dev/nvidia0")
+        if os.path.exists("/dev/nvidia-modeset"):
+            make_entry("/dev/nvidia-modeset")
+        if os.path.exists("/dev/nvidia-caps/nvidia-cap1"):
+            make_entry("/dev/nvidia-caps/nvidia-cap1")
+        if os.path.exists("/dev/nvidia-caps/nvidia-cap2"):
+            make_entry("/dev/nvidia-caps/nvidia-cap2")
+        if os.path.exists("/dev/nvidia-uvm"):
+            make_entry("/dev/nvidia-uvm")
+        if os.path.exists("/dev/nvidia-uvm-tools"):
+            make_entry("/dev/nvidia-uvm-tools")
         make_entry("tmpfs", "usr", "tmpfs", "nodev 0 0", False)
         make_entry("/usr/lib", "usr/lib", options="rbind,create=dir,optional 0 0")
         make_entry("/usr/lib64", "usr/lib64", options="rbind,create=dir,optional 0 0")
         make_entry("/usr/share", "usr/share", options="rbind,create=dir,optional 0 0")
         make_entry("/usr/local", "usr/local", options="rbind,create=dir,optional 0 0")
+        make_entry("/usr/bin", "usr/bin", options="rbind,create=dir,optional 0 0")
 
         make_entry("tmpfs", "hybris", "tmpfs", "nodev 0 0", False)
         make_entry("/etc", "hybris/etc", options="rbind,create=dir,optional 0 0")
@@ -367,14 +384,19 @@ def make_base_props(args):
             egl = "angle"
         #props.append("debug.stagefright.ccodec=0")
 
-    if args.hybris:
-        logging.info("Init render type by HYBRIS")
+    gpu_model = tools.helpers.gpu.getKernelDriver(args, os.path.basename(dri))
+    props.append("ro.hardware.gpu.model=" + gpu_model)
+
+    if args.hybris or gpu_model == "nvidia" or gpu_model == "nouveau":
+        props.append("ro.hardware.graphics.egl=proxy")
+        props.append("ro.hardware.gralloc=gbm_proxy")
         props.append("ro.hybris.library_path=" + hybris_lib_path)
         if not os.path.exists("/usr/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"):
             command = ["ln", "-s", hybris_gbm_file, "/usr/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"]
             tools.helpers.run.user(args, command)
-        props.append("ro.hardware.graphics.egl=proxy")
-        props.append("ro.hardware.gralloc=gbm_proxy")
+        if gpu_model == "nvidia":
+            props.append("ro.zygote.disable_gl_preload=true")
+        logging.info("Init render type by HYBRIS, GPU Model:{}".format(gpu_model))
     else:
         props.append("ro.hardware.gralloc=" + gralloc)
     if gralloc == "ft2004" or vulkan == "virtio" or gralloc == "default" :
