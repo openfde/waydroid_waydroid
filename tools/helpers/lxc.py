@@ -349,6 +349,10 @@ def make_base_props(args):
                     hybris_lib_path = "/usr/lib/aarch64-linux-gnu/d3000m/"
                 elif os.path.exists("/usr/lib/aarch64-linux-gnu/libgbm_ftg.so"):
                     hybris_gbm_file = "/usr/lib/aarch64-linux-gnu/libgbm_ftg.so"
+            elif vulkan == "nvidia":
+                gralloc = "gbm_proxy"
+                egl = "proxy"
+                hybris_lib_path = "/usr/local/lib/aarch64-linux-gnu/:/usr/lib/aarch64-linux-gnu/"
             else :
                 if vulkan == "":
                     gralloc = "default"
@@ -371,6 +375,11 @@ def make_base_props(args):
         if not os.path.exists("/usr/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"):
             command = ["ln", "-s", hybris_gbm_file, "/usr/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"]
             tools.helpers.run.user(args, command)
+        if os.path.exists("/usr/local/lib/aarch64-linux-gnu/libgbm.so.1"):
+            if not os.path.exists("/usr/local/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"):
+                command = ["ln", "-s", "/usr/local/lib/aarch64-linux-gnu/libgbm.so.1",
+                            "/usr/local/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"]
+                tools.helpers.run.user(args, command)
         if gpu_model == "nvidia":
             props.append("ro.zygote.disable_gl_preload=true")
         logging.info("Init render type by HYBRIS, GPU Model:{}".format(gpu_model))
@@ -421,7 +430,7 @@ def make_base_props(args):
     if not vulkan and dri:
         vulkan = tools.helpers.gpu.getVulkanDriver(args, os.path.basename(dri))
     if vulkan:
-        if vulkan != "FTG340":
+        if vulkan != "FTG340" and vulkan != "nvidia":
             props.append("ro.hardware.vulkan=" + vulkan)
 
     treble = tools.helpers.props.host_get(args, "ro.treble.enabled")
