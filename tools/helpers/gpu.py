@@ -33,7 +33,8 @@ def getVulkanDriver(args, dev):
         "virtio-pci": "virtio",
         "pvrsrvkm": "powervr",
         "ftg340": "FTG340",
-        "jmgpu" :"ranchu"
+        "jmgpu" :"ranchu",
+        "nvidia" : "nvidia"
     }
     kernel_driver = getKernelDriver(args, dev)
     if kernel_driver in mapping:
