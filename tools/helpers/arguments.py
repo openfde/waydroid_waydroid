@@ -33,6 +33,8 @@ def arguments_init(subparser):
                      help="rom type (options: \"lineage\", \"bliss\" or OTA channel URL; default is LineageOS)")
     ret.add_argument("-s", "--system_type",
                      help="system type (options: VANILLA, FOSS or GAPPS; default is VANILLA)")
+    ret.add_argument("-hybris", "--hybris", action="store_true",
+                     help="initialize for hybris render type — Android directly calls the Linux GPU driver.")
     return ret
 
 def arguments_status(subparser):

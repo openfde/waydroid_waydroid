@@ -134,6 +134,36 @@ def generate_nodes_lxc_config(args):
     # apex need
     make_entry("/dev/loop-control")
     make_entry("/dev", "dev/block", options="rbind,create=dir,optional 0 0")
+
+    #hybris
+    dri, _ = tools.helpers.gpu.getDriNode(args)
+    gpu_model = tools.helpers.gpu.getKernelDriver(args, os.path.basename(dri))
+    if args.hybris or gpu_model == "nvidia":
+        if os.path.exists("/dev/jmgpu"):
+            make_entry("/dev/jmgpu")
+        if os.path.exists("/dev/nvidiactl"):
+            make_entry("/dev/nvidiactl")
+        if os.path.exists("/dev/nvidia0"):
+            make_entry("/dev/nvidia0")
+        if os.path.exists("/dev/nvidia-modeset"):
+            make_entry("/dev/nvidia-modeset")
+        if os.path.exists("/dev/nvidia-caps/nvidia-cap1"):
+            make_entry("/dev/nvidia-caps/nvidia-cap1")
+        if os.path.exists("/dev/nvidia-caps/nvidia-cap2"):
+            make_entry("/dev/nvidia-caps/nvidia-cap2")
+        if os.path.exists("/dev/nvidia-uvm"):
+            make_entry("/dev/nvidia-uvm")
+        if os.path.exists("/dev/nvidia-uvm-tools"):
+            make_entry("/dev/nvidia-uvm-tools")
+        make_entry("tmpfs", "usr", "tmpfs", "nodev 0 0", False)
+        make_entry("/usr/lib", "usr/lib", options="rbind,create=dir,optional 0 0")
+        make_entry("/usr/lib64", "usr/lib64", options="rbind,create=dir,optional 0 0")
+        make_entry("/usr/share", "usr/share", options="rbind,create=dir,optional 0 0")
+        make_entry("/usr/local", "usr/local", options="rbind,create=dir,optional 0 0")
+        make_entry("/usr/bin", "usr/bin", options="rbind,create=dir,optional 0 0")
+
+        make_entry("tmpfs", "hybris", "tmpfs", "nodev 0 0", False)
+        make_entry("/etc", "hybris/etc", options="rbind,create=dir,optional 0 0")
     return nodes
 
 LXC_APPARMOR_PROFILE = "lxc-waydroid"
@@ -294,6 +324,8 @@ def make_base_props(args):
     vulkan = " "
 
     gralloc = find_hal("gralloc")
+    hybris_gbm_file = "/usr/lib/aarch64-linux-gnu/libgbm.so.1"
+    hybris_lib_path = "/usr/lib/aarch64-linux-gnu/"
     if not gralloc:
         if find_hidl("android.hardware.graphics.allocator@4.0::IAllocator/default"):
             gralloc = "android"
@@ -306,9 +338,21 @@ def make_base_props(args):
             elif vulkan == "ranchu":
                 gralloc = "ranchu"
                 egl = "emulation"
+                if os.path.exists("/dev/jmgpu"):
+                    hybris_lib_path = "/usr/lib/aarch64-linux-gnu/mwv207/"
+                    hybris_gbm_file = "/usr/lib/aarch64-linux-gnu/mwv207/libgbm.so.1"
             elif vulkan == "FTG340":
                 gralloc = "FTG340"
                 egl = "FTG340"
+                if os.path.exists("/usr/lib/aarch64-linux-gnu/d3000m/libgbm.so.1"):
+                    hybris_gbm_file = "/usr/lib/aarch64-linux-gnu/d3000m/libgbm.so.1"
+                    hybris_lib_path = "/usr/lib/aarch64-linux-gnu/d3000m/"
+                elif os.path.exists("/usr/lib/aarch64-linux-gnu/libgbm_ftg.so"):
+                    hybris_gbm_file = "/usr/lib/aarch64-linux-gnu/libgbm_ftg.so"
+            elif vulkan == "nvidia":
+                gralloc = "gbm_proxy"
+                egl = "proxy"
+                hybris_lib_path = "/usr/local/lib/aarch64-linux-gnu/:/usr/lib/aarch64-linux-gnu/"
             else :
                 if vulkan == "":
                     gralloc = "default"
@@ -320,7 +364,27 @@ def make_base_props(args):
             gralloc = "default"
             egl = "angle"
         #props.append("debug.stagefright.ccodec=0")
-    props.append("ro.hardware.gralloc=" + gralloc)
+
+    gpu_model = tools.helpers.gpu.getKernelDriver(args, os.path.basename(dri))
+    props.append("ro.hardware.gpu.model=" + gpu_model)
+
+    if args.hybris or gpu_model == "nvidia":
+        props.append("ro.hardware.graphics.egl=proxy")
+        props.append("ro.hardware.gralloc=gbm_proxy")
+        props.append("ro.hybris.library_path=" + hybris_lib_path)
+        if not os.path.exists("/usr/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"):
+            command = ["ln", "-s", hybris_gbm_file, "/usr/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"]
+            tools.helpers.run.user(args, command)
+        if os.path.exists("/usr/local/lib/aarch64-linux-gnu/libgbm.so.1"):
+            if not os.path.exists("/usr/local/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"):
+                command = ["ln", "-s", "/usr/local/lib/aarch64-linux-gnu/libgbm.so.1",
+                            "/usr/local/lib/aarch64-linux-gnu/libgbm_mesa_proxy.so.1"]
+                tools.helpers.run.user(args, command)
+        if gpu_model == "nvidia":
+            props.append("ro.zygote.disable_gl_preload=true")
+        logging.info("Init render type by HYBRIS, GPU Model:{}".format(gpu_model))
+    else:
+        props.append("ro.hardware.gralloc=" + gralloc)
     if gralloc == "ft2004" or vulkan == "virtio" or gralloc == "default" :
         props.append("fde.systemui.blurlevel=1")
     if gralloc == "FTG340":
@@ -366,7 +430,7 @@ def make_base_props(args):
     if not vulkan and dri:
         vulkan = tools.helpers.gpu.getVulkanDriver(args, os.path.basename(dri))
     if vulkan:
-        if vulkan != "FTG340":
+        if vulkan != "FTG340" and vulkan != "nvidia":
             props.append("ro.hardware.vulkan=" + vulkan)
 
     treble = tools.helpers.props.host_get(args, "ro.treble.enabled")
